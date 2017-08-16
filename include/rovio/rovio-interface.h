@@ -59,34 +59,9 @@
 
 namespace rovio {
 
-// TODO(mfehr): clean up typedefs.
-typedef FILTER mtFilter;
-typedef typename mtFilter::mtFilterState mtFilterState;
-typedef typename mtFilterState::mtState mtState;
-typedef typename mtFilter::mtPrediction::mtMeas mtPredictionMeas;
-typedef typename std::tuple_element<0, typename mtFilter::mtUpdates>::type
-    mtImgUpdate;
-typedef typename mtImgUpdate::mtMeas mtImgMeas;
-typedef typename std::tuple_element<1, typename mtFilter::mtUpdates>::type
-    mtPoseUpdate;
-typedef typename mtPoseUpdate::mtMeas mtPoseMeas;
-typedef typename std::tuple_element<2, typename mtFilter::mtUpdates>::type
-    mtVelocityUpdate;
-typedef typename mtVelocityUpdate::mtMeas mtVelocityMeas;
-
-typedef std::function<void(FilterUpdateState *)> FilterUpdateStateCallback;
-
-struct FilterUpdateStateCallbackSettings {
-  bool get_feature_update = false;
-  bool get_patch_update = false;
-};
-
-typedef std::pair<FilterUpdateStateCallback, FilterUpdateStateCallbackSettings>
-    FilterUpdateStateCallbackHandle;
-
 struct FilterInitializationState;
 
-class RovioInterface {
+template <typename FILTER> class RovioInterface {
 public:
   RovioInterface();
 
@@ -200,6 +175,12 @@ public:
   bool processGroundTruthUpdate(const Eigen::Vector3d &JrJV, const QPD &qJV,
                                 const double time_s);
 
+  typedef std::function<void(FilterUpdateState *)> FilterUpdateStateCallback;
+  struct FilterUpdateStateCallbackSettings {
+    bool get_feature_update = false;
+    bool get_patch_update = false;
+  };
+
   /** \brief Register multiple callbacks that are invoked once the filter
    *         concludes a successful update.
    */
@@ -219,16 +200,37 @@ public:
   void visualizeUpdate() const;
 
 private:
+  typedef std::pair<FilterUpdateStateCallback,
+                    FilterUpdateStateCallbackSettings>
+      FilterUpdateStateCallbackHandle;
   std::vector<FilterUpdateStateCallbackHandle> filter_update_state_callbacks_;
 
+  typedef typename mtFilter::mtFilterState mtFilterState;
+  typedef typename mtFilterState::mtState mtState;
+
   // Rovio filter variables.
+  typedef FILTER mtFilter;
   std::shared_ptr<mtFilter> mpFilter_;
+
+  typedef typename mtFilter::mtPrediction::mtMeas mtPredictionMeas;
   mtPredictionMeas predictionMeas_;
+
+  typedef typename std::tuple_element<0, typename mtFilter::mtUpdates>::type
+      mtImgUpdate;
+  typedef typename mtImgUpdate::mtMeas mtImgMeas;
   mtImgMeas imgUpdateMeas_;
   mtPoseMeas poseUpdateMeas_;
+
+  typedef typename std::tuple_element<2, typename mtFilter::mtUpdates>::type
+      mtVelocityUpdate;
+  typedef typename mtVelocityUpdate::mtMeas mtVelocityMeas;
   mtVelocityMeas velocityUpdateMeas_;
   FilterInitializationState init_state_;
   mtImgUpdate *mpImgUpdate_;
+
+  typedef typename std::tuple_element<1, typename mtFilter::mtUpdates>::type
+      mtPoseUpdate;
+  typedef typename mtPoseUpdate::mtMeas mtPoseMeas;
   mtPoseUpdate *mpPoseUpdate_;
 
   // Rovio outputs and coordinate transformations

@@ -182,7 +182,7 @@ public:
   void publishState(const FilterUpdateState &state);
 
 private:
-  RovioInterface rovio_interface_;
+  RovioInterface<FILTER> rovio_interface_;
 };
 }
 
