@@ -106,15 +106,11 @@ if(MAKE_SCENE)
 	add_library(${PROJECT_NAME} src/Camera.cpp
                               src/FeatureCoordinates.cpp
                               src/FeatureDistance.cpp
-                              src/RovioNode.cpp
-                              src/rovio-interface.cc
                               src/Scene.cpp)
 else()
 	add_library(${PROJECT_NAME} src/Camera.cpp
                               src/FeatureCoordinates.cpp
-                              src/FeatureDistance.cpp
-                              src/RovioNode.cpp
-                              src/rovio-interface.cc)
+                              src/FeatureDistance.cpp)
 endif()
 
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${OpenMP_EXE_LINKER_FLAGS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARY})
