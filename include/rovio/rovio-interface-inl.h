@@ -42,7 +42,6 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
-#include <glog/logging.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -257,7 +256,7 @@ void RovioInterface<FILTER>::registerStateUpdateCallback(
 
 template <typename FILTER>
 bool RovioInterface<FILTER>::getState(RovioState<FILTER> *filter_update) {
-  CHECK_NOTNULL(filter_update);
+  // CHECK_NOTNULL(filter_update);
   return getState(enable_feature_update_output_, enable_patch_update_output_,
                   filter_update);
 }
@@ -266,7 +265,7 @@ template <typename FILTER>
 bool RovioInterface<FILTER>::getState(const bool get_feature_update,
                                       const bool get_patch_update,
                                       RovioState<FILTER> *filter_update) {
-  CHECK_NOTNULL(filter_update);
+  // CHECK_NOTNULL(filter_update);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   // Check if filter is initialized.
@@ -289,6 +288,9 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
   for (unsigned int i = 0u; i < mtState::nCam_; ++i) {
     filter_update->BrBC[i] = mpFilter_->multiCamera_.BrBC_[i];
     filter_update->qCB[i] = mpFilter_->multiCamera_.qCB_[i];
+
+    filter_update->MrMC[i] = state.MrMC(i);
+    filter_update->qCM[i] = state.qCM(i);
   }
 
   // Filter covariance.
@@ -299,9 +301,6 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
     filter_update->IrIW = state.poseLin(mpPoseUpdate_->inertialPoseIndex_);
     filter_update->qWI = state.poseRot(mpPoseUpdate_->inertialPoseIndex_);
   }
-
-  filter_update->MrMC = state.MrMC;
-  filter_update->qCM = state.qCM;
 
   // IMU state and IMU covariance.
   imuOutputCT_.transformState(state, filter_update->imuOutput);
@@ -402,10 +401,13 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
 
       patch_state.isFeatureValid[i] = true;
       patch_state.patchIndices[i] = filterState.fsm_.features_[i].idx_;
-      patch_state.patches[i] =
-          filterState.fsm_.features_[i].mpMultilevelPatch_->patches_;
-      patch_state.isPatchValid[i] =
-          filterState.fsm_.features_[i].mpMultilevelPatch_->isValidPatch_;
+
+      for (unsigned int j = 0u; j < RovioState<FILTER>::kNumPatchLevels; ++j) {
+        patch_state.patches[i][j] =
+            filterState.fsm_.features_[i].mpMultilevelPatch_->patches_[j];
+        patch_state.isPatchValid[i][j] =
+            filterState.fsm_.features_[i].mpMultilevelPatch_->isValidPatch_[j];
+      }
     }
   }
 

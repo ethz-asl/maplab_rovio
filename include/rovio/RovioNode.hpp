@@ -38,7 +38,6 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
-#include <glog/logging.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -402,7 +401,7 @@ void RovioNode<FILTER>::imgCallback1(const sensor_msgs::ImageConstPtr &img) {
 template <typename FILTER>
 void RovioNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
                                     const int camID) {
-  CHECK_LT(camID, RovioState<FILTER>::kNumCameras);
+  // CHECK_LT(camID, RovioState<FILTER>::kNumCameras);
 
   // Us cv bridge to get image from ros msg.
   cv_bridge::CvImagePtr cv_ptr;
@@ -755,7 +754,7 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
       pubPcl_.getNumSubscribers() > 0 || pubMarkers_.getNumSubscribers() > 0 ||
       forcePclPublishing_ || forceMarkersPublishing_;
   if (state.hasFeatureUpdate && publishFeatureState) {
-    CHECK(state.feature_state);
+    // CHECK(state.feature_state);
     const RovioFeatureState<FILTER> &feature_state = (*state.feature_state);
 
     // Prepare point cloud message and markers.
@@ -779,7 +778,7 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
         const Eigen::Vector3d &CrCPp = feature_state.CrCPp_vec[i];
         const Eigen::Vector3f &bearing = feature_state.bearings[i];
         const Eigen::Vector3f &MrMP = feature_state.MrMP_vec[i];
-        const Eigen::Vector3f &cov_MrMP = feature_state.cov_MrMP_vec[i];
+        const Eigen::Matrix3f &cov_MrMP = feature_state.cov_MrMP_vec[i];
         const float distance = feature_state.distances[i];
         const float distance_cov = feature_state.distances_cov[i];
         const uint32_t status = feature_state.status_vec[i];
@@ -860,7 +859,7 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
   const bool publishPatchState =
       pubPatch_.getNumSubscribers() > 0 || forcePatchPublishing_;
   if (state.hasPatchUpdate && publishPatchState) {
-    CHECK(state.patch_state);
+    // CHECK(state.patch_state);
     const RovioPatchState<FILTER> &patch_state = *(state.patch_state);
 
     patchMsg_.header.seq = msgSeq_;
@@ -884,21 +883,21 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
                                      (l * RovioState<FILTER>::kPatchArea +
                                       y * RovioState<FILTER>::kPatchSize + x) *
                                          4],
-                     &patch_state.patches[l]
+                     &patch_state.patches[i][l]
                           .patch_[y * RovioState<FILTER>::kPatchSize + x],
                      sizeof(float)); // Patch
               memcpy(&patchMsg_.data[offset + patchMsg_.fields[2].offset +
                                      (l * RovioState<FILTER>::kPatchArea +
                                       y * RovioState<FILTER>::kPatchSize + x) *
                                          4],
-                     &patch_state.patches[l]
+                     &patch_state.patches[i][l]
                           .dx_[y * RovioState<FILTER>::kPatchSize + x],
                      sizeof(float)); // dx
               memcpy(&patchMsg_.data[offset + patchMsg_.fields[3].offset +
                                      (l * RovioState<FILTER>::kPatchArea +
                                       y * RovioState<FILTER>::kPatchSize + x) *
                                          4],
-                     &patch_state.patches[l]
+                     &patch_state.patches[i][l]
                           .dy_[y * RovioState<FILTER>::kPatchSize + x],
                      sizeof(float)); // dy
 
@@ -909,7 +908,7 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
                                      (l * RovioState<FILTER>::kPatchArea +
                                       y * RovioState<FILTER>::kPatchSize + x) *
                                          4],
-                     &patch_state.patches[l]
+                     &patch_state.patches[i][l]
                           .patch_[y * RovioState<FILTER>::kPatchSize + x],
                      sizeof(float)); // error
             }
