@@ -29,6 +29,7 @@
 #ifndef ROVIO_ROVIO_INTERFACE_H_
 #define ROVIO_ROVIO_INTERFACE_H_
 
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <queue>
@@ -58,6 +59,7 @@
 
 namespace rovio {
 
+// TODO(mfehr): clean up typedefs.
 typedef FILTER mtFilter;
 typedef typename mtFilter::mtFilterState mtFilterState;
 typedef typename mtFilterState::mtState mtState;
@@ -72,61 +74,108 @@ typedef typename std::tuple_element<2, typename mtFilter::mtUpdates>::type
     mtVelocityUpdate;
 typedef typename mtVelocityUpdate::mtMeas mtVelocityMeas;
 
+typedef std::function<void(FilterUpdateState *)> FilterUpdateStateCallback;
+
+struct FilterUpdateStateCallbackSettings {
+  bool get_feature_update = false;
+  bool get_patch_update = false;
+};
+
+typedef std::pair<FilterUpdateStateCallback, FilterUpdateStateCallbackSettings>
+    FilterUpdateStateCallbackHandle;
+
 struct FilterInitializationState;
 
 class RovioInterface {
 public:
   RovioInterface();
 
-  template <size_t nCam> struct FilterUpdateState {
-    Eigen::Vector3d IrIW;
-    QPD qWI;
+  template <size_t max_num_features, size_t patch_size, size_t patch_levels>
+  struct PatchUpdateState {
+    bool isFeatureValid[max_num_features];
+    bool isPatchValid[max_num_features][patch_levels];
+    int patchId[max_num_features][patch_levels];
+    Patch<patch_size> patches[max_num_features][patch_levels];
+  };
 
-    QPD qCM[nCam];
-    V3D MrMC[nCam];
+  template <size_t max_num_features> struct FeatureUpdateState {
+
+    bool isFeatureValid[max_num_features];
+
+    int featureObserverCamIDs[max_num_features];
+
+    Eigen::Vector3d CrCPm_vec[max_num_features];
+    Eigen::Vector3d CrCPp_vec[max_num_features];
+
+    Eigen::Vector3f bearings[max_num_features];
+
+    Eigen::Vector3f MrMP_vec[max_num_features];
+    Eigen::Matrix3f cov_MrMP_vec[max_num_features];
+
+    float distances[max_num_features];
+    float distances_cov[max_num_features];
+
+    uint32_t status_vec[max_num_features];
+  };
+
+  template <size_t num_cameras, size_t max_num_features, size_t patch_size,
+            size_t patch_levels>
+  struct FilterUpdateState {
+    // If the filter isn't initialized, the state variables do not contain any
+    // meaningful data.
+    bool isInitialized = false;
 
     double timeAfterUpdate;
 
-    bool isInitialized;
+    // Inertial pose.
+    bool hasInertialPose = false;
+    Eigen::Vector3d IrIW;
+    kindr::RotationQuaternionPD qWI;
 
-    double filterUpdateTimeMs;
-    double filterUpdateTimeTotalMs;
-    size_t numberImagesProcessed;
-    size_t numberImagesProcessedTotal;
+    kindr::RotationQuaternionPD qCM[num_cameras];
+    Eigen::Vector3d MrMC[num_cameras];
 
-    MXD covarianceFilter;
-    MXD imuOutputCov;
+    // Camera extrinsics.
+    Eigen::Vector3d BrBC[num_cameras];
+    kindr::RotationQuaternionPD qCB[num_cameras];
 
-    MXD covariance; // TODO
-    MXD covariance; // TODO
+    Eigen::MatrixXd filterCovariance;
 
-    mtOutput imuOutput;
+    // IMU state and convariance.
+    StandardOutput imuOutput;
+    Eigen::MatrixXd imuOutputCov;
+
+    Eigen::Vector3d gyb;
+    Eigen::Vector3d acb;
 
     mtImgUpdate *mpImgUpdate;
     mtPoseUpdate *mpPoseUpdate;
+
+    // Feature state.
+    bool hasFeatureUpdate = false;
+    std::unique_ptr<FeatureUpdateState<max_num_features>> feature_state;
+
+    // Path state.
+    bool hasPatchUpdate = false;
+    std::unique_ptr<PathUpdateState<max_num_features, patch_size, patch_levels>>
+        patch_state;
   };
 
-  bool updateFilter(FilterUpdateState *filter_update);
+  /** \brief Outputting the feature and patch update state involves allocating
+  *          some large arrays and could result in some overhead. Therefore the
+  *          state will not be retrieved by default.
+  */
+  void getState(const bool get_feature_update, const bool get_patch_update,
+                FilterUpdateState *filter_update);
 
-  void getUpdateSettings()
-
-      bool reset();
-
-  bool resetToPose(const V3D &WrWM, const QPD &qMW);
+  /** \brief Trigger a filter update. Will return true if an update happened.
+  */
+  bool updateFilter();
 
   /** \brief Reset the filter when the next IMU measurement is received.
    *         The orientaetion is initialized using an accel. measurement.
    */
-  void requestReset() {
-    std::lock_guard<std::mutex> lock(m_filter_);
-    if (!init_state_.isInitialized()) {
-      std::cout << "Reinitialization already triggered. Ignoring request...";
-      return;
-    }
-
-    init_state_.state_ =
-        FilterInitializationState::State::WaitForInitUsingAccel;
-  }
+  void requestReset();
 
   /** \brief Reset the filter when the next IMU measurement is received.
    *         The pose is initialized to the passed pose.
@@ -135,18 +184,28 @@ public:
    *  @param qMW  - Quaternion, expressing World-Frame in IMU-Coordinates (World
    * Coordinates->IMU Coordinates)
    */
-  void requestResetToPose(const V3D &WrWM, const QPD &qMW) {
-    std::lock_guard<std::mutex> lock(m_filter_);
-    if (!init_state_.isInitialized()) {
-      std::cout << "Reinitialization already triggered. Ignoring request...";
-      return;
-    }
+  void requestResetToPose(const V3D &WrWM, const QPD &qMW);
 
-    init_state_.WrWM_ = WrWM;
-    init_state_.qMW_ = qMW;
-    init_state_.state_ =
-        FilterInitializationState::State::WaitForInitExternalPose;
-  }
+  // TODO(mfehr): IMPLEMENT these
+  /////////////////////////////////////
+
+  bool processVelocityUpdate(const Eigen::Vector3d &AvM, const double time_s);
+
+  bool processImuUpdate(const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr,
+                        const double time_s);
+
+  void processImageUpdate(const int camID, const cv::Mat &cv_img,
+                          const double time_s);
+
+  bool processGroundTruthUpdate(const Eigen::Vector3d &JrJV, const QPD &qJV,
+                                const double time_s);
+
+  /** \brief Register multiple callbacks that are invoked once the filter
+   *         concludes a successful update.
+   */
+  void registerStateUpdateCallback(FilterUpdateStateCallback callback,
+                                   const bool get_feature_update,
+                                   const bool get_patch_update);
 
   /** \brief Tests the functionality of the rovio node.
    *
@@ -154,7 +213,14 @@ public:
    */
   void makeTest();
 
+  /** \brief Print update to std::cout and visualize images using opencv. The
+   *  visualization is configured and enabled/disabled based on mpImgUpdate.
+  */
+  void visualizeUpdate() const;
+
 private:
+  std::vector<FilterUpdateStateCallbackHandle> filter_update_state_callbacks_;
+
   // Rovio filter variables.
   std::shared_ptr<mtFilter> mpFilter_;
   mtPredictionMeas predictionMeas_;
@@ -166,22 +232,19 @@ private:
   mtPoseUpdate *mpPoseUpdate_;
 
   // Rovio outputs and coordinate transformations
-  typedef StandardOutput mtOutput;
   mtOutput cameraOutput_;
   MXD cameraOutputCov_;
   CameraOutputCT<mtState> cameraOutputCT_;
   ImuOutputCT<mtState> imuOutputCT_;
   rovio::TransformFeatureOutputCT<mtState> transformFeatureOutputCT_;
   rovio::LandmarkOutputImuCT<mtState> landmarkOutputImuCT_;
-  rovio::FeatureOutput featureOutput_;
-  rovio::LandmarkOutput landmarkOutput_;
   MXD featureOutputCov_;
   MXD landmarkOutputCov_;
   rovio::FeatureOutputReadableCT featureOutputReadableCT_;
   rovio::FeatureOutputReadable featureOutputReadable_;
   MXD featureOutputReadableCov_;
 
-  std::mutex m_filter_;
+  std::recusrive_mutex m_filter_;
 };
 
 struct FilterInitializationState {
