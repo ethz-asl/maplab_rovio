@@ -247,7 +247,7 @@ bool RovioInterface<FILTER>::processGroundTruthOdometryUpdate(
 
 template <typename FILTER>
 void RovioInterface<FILTER>::registerStateUpdateCallback(
-    FilterUpdateStateCallback callback) {
+    RovioStateCallback callback) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   filter_update_state_callbacks_.push_back(callback);
@@ -316,7 +316,7 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
     filter_update->feature_state.reset(new RovioFeatureState<FILTER>());
     RovioFeatureState<FILTER> &feature_state = *filter_update->feature_state;
 
-    feature_state.hasFeatureUpdate = true;
+    filter_update->hasFeatureUpdate = true;
 
     FeatureDistance distance;
     double d, d_minus, d_plus;
@@ -371,6 +371,7 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
 
       feature_state.status_vec[i] =
           filterState.fsm_.features_[i].mpStatistics_->status_[0];
+      feature_state.featureIndices[i] = filterState.fsm_.features_[i].idx_;
       feature_state.MrMP_vec[i] =
           landmarkOutput_.get<LandmarkOutput::_lmk>().template cast<float>();
       feature_state.CrCPp_vec[i] = bearingVector * d_plus;
@@ -389,6 +390,8 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
     filter_update->patch_state.reset(new RovioPatchState<FILTER>());
     RovioPatchState<FILTER> &patch_state = *filter_update->patch_state;
 
+    filter_update->hasPatchUpdate = true;
+
     for (unsigned int i = 0u; i < RovioState<FILTER>::kMaxNumFeatures; ++i) {
       const bool featureIsValid = filterState.fsm_.isValid_[i];
       featureIsValid;
@@ -398,7 +401,7 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
       }
 
       patch_state.isFeatureValid[i] = true;
-      patch_state.patchId[i] = filterState.fsm_.features_[i].idx_;
+      patch_state.patchIndices[i] = filterState.fsm_.features_[i].idx_;
       patch_state.patches[i] =
           filterState.fsm_.features_[i].mpMultilevelPatch_->patches_;
       patch_state.isPatchValid[i] =
@@ -454,7 +457,7 @@ template <typename FILTER> bool RovioInterface<FILTER>::updateFilter() {
   visualizeUpdate();
 
   // Notify all filter state update callbacks.
-  for (FilterUpdateStateCallback &callback : filter_update_state_callbacks_) {
+  for (RovioStateCallback callback : filter_update_state_callbacks_) {
     RovioState<FILTER> state;
     getState(&state);
 
