@@ -11,7 +11,6 @@ add_definitions(-DROVIO_NCAM=${ROVIO_NCAM})
 add_definitions(-DROVIO_NLEVELS=${ROVIO_NLEVELS})
 add_definitions(-DROVIO_PATCHSIZE=${ROVIO_PATCHSIZE})
 add_definitions(-DROVIO_NPOSE=${ROVIO_NPOSE})
-add_definitions(-std=c++11)
 
 add_subdirectory(lightweight_filtering)
 
@@ -66,19 +65,19 @@ endif()
 
 ##################### Install ROS stuff #####################
 find_package(catkin REQUIRED COMPONENTS
-  lightweight_filtering
-  kindr
-  roscpp
-  roslib
   ${OPENCV_PACKAGE}
   cv_bridge
+  geometry_msgs
+  kindr
+  lightweight_filtering
   message_generation
   nav_msgs
-  geometry_msgs
+  rosbag
+  roscpp
+  roslib
   sensor_msgs
   std_msgs
   tf
-  rosbag
 )
 
 add_service_files(
@@ -95,19 +94,19 @@ catkin_package(
 	INCLUDE_DIRS include ${catkin_INCLUDE_DIRS}
     LIBRARIES ${PROJECT_NAME}
 	CATKIN_DEPENDS
-  lightweight_filtering
-  kindr
-  roscpp
-  roslib
   ${OPENCV_PACKAGE}
   cv_bridge
+  geometry_msgs
+  kindr
+  lightweight_filtering
   message_runtime
   nav_msgs
-  geometry_msgs
+  rosbag
+  roscpp
+  roslib
   sensor_msgs
   std_msgs
   tf
-  rosbag
   yaml_cpp_catkin
 )
 
