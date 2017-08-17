@@ -55,8 +55,8 @@
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
 #include "rovio/SrvResetToPose.h"
-#include "rovio/rovio-interface-state.h"
-#include "rovio/rovio-interface.h"
+#include "rovio/RovioInterfaceStates.h"
+#include "rovio/RovioInterface.h"
 
 namespace rovio {
 

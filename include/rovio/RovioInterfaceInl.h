@@ -29,7 +29,7 @@
 #ifndef ROVIO_ROVIO_INTERFACE_INL_H_
 #define ROVIO_ROVIO_INTERFACE_INL_H_
 
-#include "rovio/rovio-interface.h"
+#include "rovio/RovioInterface.h"
 
 #include "rovio/RovioNode.hpp"
 
@@ -59,7 +59,7 @@
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
 #include "rovio/SrvResetToPose.h"
-#include "rovio/rovio-interface.h"
+#include "rovio/RovioInterface.h"
 
 namespace rovio {
 

@@ -36,7 +36,7 @@
 #include <Eigen/StdVector>
 #include "rovio/RovioFilter.hpp"
 #include "rovio/RovioNode.hpp"
-#include "rovio/rovio-interface.h"
+#include "rovio/RovioInterface.h"
 #include <boost/foreach.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
