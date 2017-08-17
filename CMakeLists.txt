@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 project(rovio)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native")
 set(ROVIO_NMAXFEATURE 25 CACHE STRING "Number of features for ROVIO")
 set(ROVIO_NCAM 1 CACHE STRING "Number of enabled cameras")
 set(ROVIO_NLEVELS 4 CACHE STRING "Number of image leavels for the features")
@@ -43,6 +43,15 @@ endif()
 
 find_package(PkgConfig)
 
+find_package(opencv3_catkin)
+if(opencv3_catkin_FOUND)
+  message("Found opencv3_catkin!")
+  set(OPENCV_PACKAGE "opencv3_catkin")
+else()
+  message("Use the systems opencv installation!")
+  set(OPENCV_PACKAGE "")
+endif()
+
 find_package(yaml_cpp_catkin QUIET)
 if(${yaml_cpp_catkin_FOUND})
   message(STATUS "Found yaml_cpp_catkin, using instead of system library.")
@@ -56,18 +65,19 @@ endif()
 
 ##################### Install ROS stuff #####################
 find_package(catkin REQUIRED COMPONENTS
-	lightweight_filtering
-  	kindr
-	roscpp
-	roslib
-	cv_bridge
-	message_generation
-	nav_msgs
-	geometry_msgs
-	sensor_msgs
-	std_msgs
-	tf
-	rosbag
+  ${OPENCV_PACKAGE}
+  cv_bridge
+  geometry_msgs
+  kindr
+  lightweight_filtering
+  message_generation
+  nav_msgs
+  rosbag
+  roscpp
+  roslib
+  sensor_msgs
+  std_msgs
+  tf
 )
 
 add_service_files(
@@ -84,18 +94,19 @@ catkin_package(
 	INCLUDE_DIRS include ${catkin_INCLUDE_DIRS}
     LIBRARIES ${PROJECT_NAME}
 	CATKIN_DEPENDS
-	lightweight_filtering
-  	kindr
-	roscpp
-	roslib
-	cv_bridge
-	message_runtime
-	nav_msgs
-	geometry_msgs
-	sensor_msgs
-	std_msgs
-	tf
-	rosbag
+  ${OPENCV_PACKAGE}
+  cv_bridge
+  geometry_msgs
+  kindr
+  lightweight_filtering
+  message_runtime
+  nav_msgs
+  rosbag
+  roscpp
+  roslib
+  sensor_msgs
+  std_msgs
+  tf
   yaml_cpp_catkin
 )
 
