@@ -119,6 +119,18 @@ void RovioInterface<FILTER>::requestResetToPose(const V3D &WrWM,
       FilterInitializationState::State::WaitForInitExternalPose;
 }
 
+template <typename FILTER> void RovioInterface<FILTER>::resetToLastSafePose() {
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
+  requestReset();
+  mpFilter_->init_.state_.WrWM() = mpFilter_->safe_.state_.WrWM();
+  mpFilter_->init_.state_.qWM() = mpFilter_->safe_.state_.qWM();
+}
+
+template <typename FILTER> double RovioInterface<FILTER>::getLastSafeTime() {
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
+  return mpFilter_->safe_.t_;
+}
+
 template <typename FILTER>
 bool RovioInterface<FILTER>::processVelocityUpdate(const Eigen::Vector3d &AvM,
                                                    const double time_s) {

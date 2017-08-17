@@ -178,6 +178,16 @@ public:
   resetToPoseServiceCallback(rovio::SrvResetToPose::Request &request,
                              rovio::SrvResetToPose::Response & /*response*/);
 
+  /** \brief Get const access to the underlying rovio interface
+  */
+  inline RovioInterface<FILTER> &getRovioInterface() {
+    return rovio_interface_;
+  }
+
+  inline const RovioInterface<FILTER> &getRovioInterface() const {
+    return rovio_interface_;
+  }
+
   /** \brief Executes the update step of the filter and publishes the updated
    * data.
    */

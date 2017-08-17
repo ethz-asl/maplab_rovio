@@ -82,6 +82,8 @@ public:
   */
   bool updateFilter();
 
+  double getLastSafeTime();
+
   /** \brief Reset the filter when the next IMU measurement is received.
    *         The orientaetion is initialized using an accel. measurement.
    */
@@ -95,6 +97,8 @@ public:
    * Coordinates->IMU Coordinates)
    */
   void requestResetToPose(const V3D &WrWM, const QPD &qMW);
+
+  void resetToLastSafePose();
 
   bool processVelocityUpdate(const Eigen::Vector3d &AvM, const double time_s);
 
