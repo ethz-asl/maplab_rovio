@@ -58,8 +58,8 @@
 #include "rovio/CoordinateTransform/RovioOutput.hpp"
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "rovio/SrvResetToPose.h"
 #include "rovio/RovioInterface.h"
+#include "rovio/SrvResetToPose.h"
 
 namespace rovio {
 
@@ -196,26 +196,25 @@ bool RovioInterface<FILTER>::processImageUpdate(const int camID,
                                                 const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   if (init_state_.isInitialized() && !cv_img.empty()) {
-    if (time_s != imgUpdateMeas_.template get<mtImgMeas::_aux>().imgTime_) {
-      for (int i = 0; i < mtState::nCam_; i++) {
+    double msgTime = time_s;
+    if (msgTime != imgUpdateMeas_.template get<mtImgMeas::_aux>().imgTime_) {
+      for (int i = 0; i < RovioState<FILTER>::kNumCameras; i++) {
         if (imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[i]) {
           std::cout
               << "    \033[31mFailed Synchronization of Camera Frames, t = "
-              << time_s << "\033[0m" << std::endl;
+              << msgTime << "\033[0m" << std::endl;
         }
       }
-      imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(time_s);
+      imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
     }
     imgUpdateMeas_.template get<mtImgMeas::_aux>().pyr_[camID].computeFromImage(
         cv_img, true);
     imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[camID] = true;
 
     if (imgUpdateMeas_.template get<mtImgMeas::_aux>().areAllValid()) {
-      mpFilter_->template addUpdateMeas<0>(imgUpdateMeas_, time_s);
-      imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(time_s);
-
-      // Notify filter.
-      return updateFilter();
+      mpFilter_->template addUpdateMeas<0>(imgUpdateMeas_, msgTime);
+      imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
+      updateFilter();
     }
   }
   return false;

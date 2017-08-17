@@ -413,7 +413,7 @@ void RovioNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
                                     const int camID) {
   // CHECK_LT(camID, RovioState<FILTER>::kNumCameras);
 
-  // Us cv bridge to get image from ros msg.
+  // Get image from msg
   cv_bridge::CvImagePtr cv_ptr;
   try {
     cv_ptr = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::TYPE_8UC1);

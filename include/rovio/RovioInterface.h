@@ -224,4 +224,4 @@ private:
 
 #endif // ROVIO_ROVIO_INTERFACE_H_
 
-#include <rovio/RovioInterfaceInl.h>
+#include <rovio/RovioInterfaceInl.hpp>

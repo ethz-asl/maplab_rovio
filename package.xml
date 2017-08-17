@@ -14,18 +14,18 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>cmake_modules</depend>
-  <depend>lightweight_filtering</depend>
-  <depend>kindr</depend>
-  <depend>roscpp</depend>
-  <depend>roslib</depend>
   <depend>cv_bridge</depend>
+  <depend>geometry_msgs</depend>
+  <depend>kindr</depend>
+  <depend>lightweight_filtering</depend>
   <depend>message_generation</depend>
   <depend>message_runtime</depend>
-  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>rosbag</depend>
+  <depend>roscpp</depend>
+  <depend>roslib</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
-  <depend>nav_msgs</depend>
   <depend>tf</depend>
-  <depend>rosbag</depend>
   <depend>yaml_cpp_catkin</depend>
 </package>
