@@ -26,20 +26,24 @@
 *
 */
 
+#include <iostream>
+#include <locale>
+#include <memory>
+#include <string>
+
+#include <Eigen/StdVector>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
+#include <boost/foreach.hpp>
+#include <glog/logging.h>
 #include <ros/package.h>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
-#include <memory>
-#include <iostream>
-#include <locale>
-#include <string>
-#include <Eigen/StdVector>
+
 #include "rovio/RovioFilter.hpp"
-#include "rovio/RovioNode.hpp"
 #include "rovio/RovioInterface.h"
-#include <boost/foreach.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/posix_time/posix_time_io.hpp>
+#include "rovio/RovioNode.hpp"
+
 #define foreach BOOST_FOREACH
 
 #ifdef ROVIO_NMAXFEATURE
@@ -76,6 +80,8 @@ typedef rovio::RovioFilter<rovio::FilterState<nMax_,nLevels_,patchSize_,nCam_,nP
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "rovio");
+  google::InitGoogleLogging(argv[0]);
+
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 

@@ -38,6 +38,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
+#include <glog/logging.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -54,9 +55,9 @@
 #include "rovio/CoordinateTransform/RovioOutput.hpp"
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "rovio/SrvResetToPose.h"
-#include "rovio/RovioInterfaceStates.h"
 #include "rovio/RovioInterface.h"
+#include "rovio/RovioInterfaceStates.h"
+#include "rovio/SrvResetToPose.h"
 
 namespace rovio {
 
@@ -67,6 +68,8 @@ namespace rovio {
 template <typename FILTER> class RovioNode {
 public:
   typedef FILTER mtFilter;
+
+  RovioInterface<mtFilter> rovio_interface_;
 
   bool forceOdometryPublishing_;
   bool forcePoseWithCovariancePublishing_;
@@ -198,15 +201,12 @@ public:
     RovioNode<FILTER> *self = static_cast<RovioNode<FILTER> *>(this_pointer);
     self->publishState(state);
   }
-
-private:
-  RovioInterface<FILTER> rovio_interface_;
 };
 
 template <typename FILTER>
 RovioNode<FILTER>::RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
                              std::shared_ptr<mtFilter> mpFilter)
-    : nh_(nh), nh_private_(nh_private), rovio_interface_(mpFilter) {
+    : rovio_interface_(mpFilter), nh_(nh), nh_private_(nh_private) {
 
 #ifndef NDEBUG
   ROS_WARN("====================== Debug Mode ======================");
@@ -399,19 +399,29 @@ void RovioNode<FILTER>::imuCallback(const sensor_msgs::Imu::ConstPtr &imu_msg) {
 template <typename FILTER>
 void RovioNode<FILTER>::imgCallback0(const sensor_msgs::ImageConstPtr &img) {
   constexpr int camID = 0;
-  imgCallback(img, camID);
+  if (camID < RovioState<FILTER>::kNumCameras) {
+    imgCallback(img, camID);
+  } else {
+    LOG_EVERY_N(WARNING, 100)
+        << "Discarding image callback with camID " << camID;
+  }
 }
 
 template <typename FILTER>
 void RovioNode<FILTER>::imgCallback1(const sensor_msgs::ImageConstPtr &img) {
   constexpr int camID = 1;
-  imgCallback(img, camID);
+  if (camID < RovioState<FILTER>::kNumCameras) {
+    imgCallback(img, camID);
+  } else {
+    LOG_EVERY_N(WARNING, 100)
+        << "Discarding image callback with camID " << camID;
+  }
 }
 
 template <typename FILTER>
 void RovioNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
                                     const int camID) {
-  // CHECK_LT(camID, RovioState<FILTER>::kNumCameras);
+  CHECK_LT(camID, RovioState<FILTER>::kNumCameras);
 
   // Get image from msg
   cv_bridge::CvImagePtr cv_ptr;
@@ -498,9 +508,24 @@ bool RovioNode<FILTER>::resetToPoseServiceCallback(
 
 template <typename FILTER>
 void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
+
+  // Update the settings that determine if the current state contains
+  // information about the patches and features or not.
+  // This will only have an effect next time publishState is called.
+  const bool publishFeatureState =
+      pubPcl_.getNumSubscribers() > 0 || pubMarkers_.getNumSubscribers() > 0 ||
+      forcePclPublishing_ || forceMarkersPublishing_;
+  rovio_interface_.setEnableFeatureUpdateOutput(publishFeatureState);
+  const bool publishPatchState =
+      pubPatch_.getNumSubscribers() > 0 || forcePatchPublishing_;
+  rovio_interface_.setEnablePatchUpdateOutput(publishPatchState);
+
   if (!state.isInitialized) {
     return;
   }
+
+  CHECK_GT(state.imuOutputCov.cols(), 0);
+  CHECK_GT(state.imuOutputCov.rows(), 0);
 
   ros::Time rosTimeAfterUpdate = ros::Time(state.timeAfterUpdate);
 
@@ -584,6 +609,11 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
         unsigned int ind2 = mtOutput::template getId<mtOutput::_pos>() + j;
         if (j >= 3)
           ind2 = mtOutput::template getId<mtOutput::_att>() + j - 3;
+
+        CHECK_LT(ind1, imuOutputCov.rows());
+        CHECK_GE(ind1, 0);
+        CHECK_LT(ind2, imuOutputCov.cols());
+        CHECK_GE(ind2, 0);
         odometryMsg_.pose.covariance[j + 6 * i] = imuOutputCov(ind1, ind2);
       }
     }
@@ -601,6 +631,11 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
         unsigned int ind2 = mtOutput::template getId<mtOutput::_vel>() + j;
         if (j >= 3)
           ind2 = mtOutput::template getId<mtOutput::_ror>() + j - 3;
+
+        CHECK_LT(ind1, imuOutputCov.rows());
+        CHECK_GE(ind1, 0);
+        CHECK_LT(ind2, imuOutputCov.cols());
+        CHECK_GE(ind2, 0);
         odometryMsg_.twist.covariance[j + 6 * i] = imuOutputCov(ind1, ind2);
       }
     }
@@ -639,6 +674,11 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
         unsigned int ind2 = mtOutput::template getId<mtOutput::_pos>() + j;
         if (j >= 3)
           ind2 = mtOutput::template getId<mtOutput::_att>() + j - 3;
+
+        CHECK_LT(ind1, imuOutputCov.rows());
+        CHECK_GE(ind1, 0);
+        CHECK_LT(ind2, imuOutputCov.cols());
+        CHECK_GE(ind2, 0);
         estimatedPoseWithCovarianceStampedMsg_.pose.covariance[j + 6 * i] =
             imuOutputCov(ind1, ind2);
       }
@@ -716,6 +756,11 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
           unsigned int ind2 = mtState::template getId<mtState::_vep>(camID) + j;
           if (j >= 3)
             ind2 = mtState::template getId<mtState::_vea>(camID) + j - 3;
+
+          CHECK_LT(ind1, filterCovariance.rows());
+          CHECK_GE(ind1, 0);
+          CHECK_LT(ind2, filterCovariance.cols());
+          CHECK_GE(ind2, 0);
           extrinsicsMsg_[camID].pose.covariance[j + 6 * i] =
               filterCovariance(ind1, ind2);
         }
@@ -760,11 +805,8 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
   }
 
   // PointCloud message.
-  const bool publishFeatureState =
-      pubPcl_.getNumSubscribers() > 0 || pubMarkers_.getNumSubscribers() > 0 ||
-      forcePclPublishing_ || forceMarkersPublishing_;
   if (state.hasFeatureUpdate && publishFeatureState) {
-    // CHECK(state.feature_state);
+    CHECK(state.feature_state);
     const RovioFeatureState<FILTER> &feature_state = (*state.feature_state);
 
     // Prepare point cloud message and markers.
@@ -866,10 +908,8 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
     pubMarkers_.publish(markerMsg_);
   }
 
-  const bool publishPatchState =
-      pubPatch_.getNumSubscribers() > 0 || forcePatchPublishing_;
   if (state.hasPatchUpdate && publishPatchState) {
-    // CHECK(state.patch_state);
+    CHECK(state.patch_state);
     const RovioPatchState<FILTER> &patch_state = *(state.patch_state);
 
     patchMsg_.header.seq = msgSeq_;

@@ -44,12 +44,14 @@ endif()
 
 find_package(PkgConfig)
 
-find_package(opencv3_catkin)
+find_package(glog_catkin REQUIRED)
+
+find_package(opencv3_catkin QUIET)
 if(opencv3_catkin_FOUND)
-  message("Found opencv3_catkin!")
+  message(STATUS "Found opencv3_catkin!")
   set(OPENCV_PACKAGE "opencv3_catkin")
 else()
-  message("Use the systems opencv installation!")
+  message(STATUS "Use the systems opencv installation!")
   set(OPENCV_PACKAGE "")
 endif()
 
@@ -111,7 +113,7 @@ catkin_package(
   yaml_cpp_catkin
 )
 
-include_directories(include ${catkin_INCLUDE_DIRS} ${YamlCpp_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${YamlCpp_INCLUDE_DIRS} ${glog_catkin_INCLUDE_DIRS})
 
 if(MAKE_SCENE)
 	add_library(${PROJECT_NAME} src/Camera.cpp
@@ -124,7 +126,7 @@ else()
                               src/FeatureDistance.cpp)
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${OpenMP_EXE_LINKER_FLAGS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARY})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${OpenMP_EXE_LINKER_FLAGS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARY} ${glog_catkin_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} rovio_generate_messages_cpp)
 
 add_executable(rovio_node src/rovio_node.cpp)
@@ -134,9 +136,9 @@ add_executable(rovio_rosbag_loader src/rovio_rosbag_loader.cpp)
 target_link_libraries(rovio_rosbag_loader ${PROJECT_NAME})
 add_dependencies(rovio_rosbag_loader ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-# add_executable(feature_tracker_node src/feature_tracker_node.cpp)
-# target_link_libraries(feature_tracker_node ${PROJECT_NAME})
-# add_dependencies(feature_tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_executable(feature_tracker_node src/feature_tracker_node.cpp)
+target_link_libraries(feature_tracker_node ${PROJECT_NAME})
+add_dependencies(feature_tracker_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/gtest/")
 	message(STATUS "Building GTests!")

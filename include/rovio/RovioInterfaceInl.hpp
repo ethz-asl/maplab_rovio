@@ -42,6 +42,7 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <geometry_msgs/TwistWithCovarianceStamped.h>
+#include <glog/logging.h>
 #include <nav_msgs/Odometry.h>
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
@@ -73,10 +74,8 @@ RovioInterface<FILTER>::RovioInterface(
       landmarkOutputCov_(3, 3),
       featureOutputReadableCov_((int)(FeatureOutputReadable::D_),
                                 (int)(FeatureOutputReadable::D_)) {
-  // TODO(mfehr): IMPLEMENT
-
-  mpImgUpdate_ = &std::get<0>(mpFilter_->mUpdates_);
-  mpPoseUpdate_ = &std::get<1>(mpFilter_->mUpdates_);
+  mpImgUpdate_ = CHECK_NOTNULL(&std::get<0>(mpFilter_->mUpdates_));
+  mpPoseUpdate_ = CHECK_NOTNULL(&std::get<1>(mpFilter_->mUpdates_));
 }
 
 template <typename FILTER>
@@ -121,6 +120,7 @@ void RovioInterface<FILTER>::requestResetToPose(const V3D &WrWM,
 
 template <typename FILTER> void RovioInterface<FILTER>::resetToLastSafePose() {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
+
   requestReset();
   mpFilter_->init_.state_.WrWM() = mpFilter_->safe_.state_.WrWM();
   mpFilter_->init_.state_.qWM() = mpFilter_->safe_.state_.qWM();
@@ -195,6 +195,9 @@ bool RovioInterface<FILTER>::processImageUpdate(const int camID,
                                                 const cv::Mat &cv_img,
                                                 const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
+
+  CHECK_LT(camID, RovioState<FILTER>::kNumCameras) << "Invalid camID " << camID;
+
   if (init_state_.isInitialized() && !cv_img.empty()) {
     double msgTime = time_s;
     if (msgTime != imgUpdateMeas_.template get<mtImgMeas::_aux>().imgTime_) {
@@ -214,7 +217,9 @@ bool RovioInterface<FILTER>::processImageUpdate(const int camID,
     if (imgUpdateMeas_.template get<mtImgMeas::_aux>().areAllValid()) {
       mpFilter_->template addUpdateMeas<0>(imgUpdateMeas_, msgTime);
       imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
-      updateFilter();
+
+      // Notify filter.
+      return updateFilter();
     }
   }
   return false;
@@ -262,12 +267,12 @@ void RovioInterface<FILTER>::registerStateUpdateCallback(
 
   filter_update_state_callbacks_.push_back(callback);
 
-  std::cout << "Registered filter state update callback.";
+  std::cout << "Registered filter state update callback." << std::endl;
 }
 
 template <typename FILTER>
 bool RovioInterface<FILTER>::getState(RovioState<FILTER> *filter_update) {
-  // CHECK_NOTNULL(filter_update);
+  CHECK_NOTNULL(filter_update);
   return getState(enable_feature_update_output_, enable_patch_update_output_,
                   filter_update);
 }
@@ -276,12 +281,13 @@ template <typename FILTER>
 bool RovioInterface<FILTER>::getState(const bool get_feature_update,
                                       const bool get_patch_update,
                                       RovioState<FILTER> *filter_update) {
-  // CHECK_NOTNULL(filter_update);
+  CHECK_NOTNULL(filter_update);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   // Check if filter is initialized.
   filter_update->isInitialized = init_state_.isInitialized();
-  if (filter_update->isInitialized) {
+
+  if (!filter_update->isInitialized) {
     return false;
   }
 
@@ -317,6 +323,8 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
   imuOutputCT_.transformState(state, filter_update->imuOutput);
   imuOutputCT_.transformCovMat(state, filter_update->filterCovariance,
                                filter_update->imuOutputCov);
+  CHECK_GT(filter_update->imuOutputCov.cols(), 0);
+  CHECK_GT(filter_update->imuOutputCov.rows(), 0);
 
   // IMU biases.
   filter_update->gyb = state.gyb();
@@ -470,14 +478,14 @@ template <typename FILTER> bool RovioInterface<FILTER>::updateFilter() {
   visualizeUpdate();
 
   // Notify all filter state update callbacks.
-  for (RovioStateCallback callback : filter_update_state_callbacks_) {
-    RovioState<FILTER> state;
-    getState(&state);
-
-    // Execute callback.
-    callback(state);
+  RovioState<FILTER> state;
+  const bool hasNewState = getState(&state);
+  if (hasNewState) {
+    for (RovioStateCallback callback : filter_update_state_callbacks_) {
+      callback(state);
+    }
   }
-  return true;
+  return hasNewState;
 }
 
 template <typename FILTER> void RovioInterface<FILTER>::visualizeUpdate() {
@@ -627,6 +635,7 @@ template <typename FILTER> void RovioInterface<FILTER>::makeTest() {
   }
 
   delete mpTestFilterState;
+  std::cout << "Finished tests" << std::endl;
 }
 
 } // namespace rovio
