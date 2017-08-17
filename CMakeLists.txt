@@ -44,6 +44,15 @@ endif()
 
 find_package(PkgConfig)
 
+find_package(opencv3_catkin)
+if(opencv3_catkin_FOUND)
+  message("Found opencv3_catkin!")
+  set(OPENCV_PACKAGE "opencv3_catkin")
+else()
+  message("Use the systems opencv installation!")
+  set(OPENCV_PACKAGE "")
+endif()
+
 find_package(yaml_cpp_catkin QUIET)
 if(${yaml_cpp_catkin_FOUND})
   message(STATUS "Found yaml_cpp_catkin, using instead of system library.")
@@ -61,8 +70,8 @@ find_package(catkin REQUIRED COMPONENTS
   kindr
   roscpp
   roslib
+  ${OPENCV_PACKAGE}
   cv_bridge
-  opencv3_catkin
   message_generation
   nav_msgs
   geometry_msgs
@@ -90,8 +99,8 @@ catkin_package(
   kindr
   roscpp
   roslib
+  ${OPENCV_PACKAGE}
   cv_bridge
-  opencv3_catkin
   message_runtime
   nav_msgs
   geometry_msgs
