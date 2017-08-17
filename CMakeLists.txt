@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 project(rovio)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x -march=native")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -march=native")
 set(ROVIO_NMAXFEATURE 25 CACHE STRING "Number of features for ROVIO")
 set(ROVIO_NCAM 1 CACHE STRING "Number of enabled cameras")
 set(ROVIO_NLEVELS 4 CACHE STRING "Number of image leavels for the features")
@@ -11,6 +11,7 @@ add_definitions(-DROVIO_NCAM=${ROVIO_NCAM})
 add_definitions(-DROVIO_NLEVELS=${ROVIO_NLEVELS})
 add_definitions(-DROVIO_PATCHSIZE=${ROVIO_PATCHSIZE})
 add_definitions(-DROVIO_NPOSE=${ROVIO_NPOSE})
+add_definitions(-std=c++11)
 
 add_subdirectory(lightweight_filtering)
 
@@ -56,18 +57,19 @@ endif()
 
 ##################### Install ROS stuff #####################
 find_package(catkin REQUIRED COMPONENTS
-	lightweight_filtering
-  	kindr
-	roscpp
-	roslib
-	cv_bridge
-	message_generation
-	nav_msgs
-	geometry_msgs
-	sensor_msgs
-	std_msgs
-	tf
-	rosbag
+  lightweight_filtering
+  kindr
+  roscpp
+  roslib
+  cv_bridge
+  opencv3_catkin
+  message_generation
+  nav_msgs
+  geometry_msgs
+  sensor_msgs
+  std_msgs
+  tf
+  rosbag
 )
 
 add_service_files(
@@ -84,18 +86,19 @@ catkin_package(
 	INCLUDE_DIRS include ${catkin_INCLUDE_DIRS}
     LIBRARIES ${PROJECT_NAME}
 	CATKIN_DEPENDS
-	lightweight_filtering
-  	kindr
-	roscpp
-	roslib
-	cv_bridge
-	message_runtime
-	nav_msgs
-	geometry_msgs
-	sensor_msgs
-	std_msgs
-	tf
-	rosbag
+  lightweight_filtering
+  kindr
+  roscpp
+  roslib
+  cv_bridge
+  opencv3_catkin
+  message_runtime
+  nav_msgs
+  geometry_msgs
+  sensor_msgs
+  std_msgs
+  tf
+  rosbag
   yaml_cpp_catkin
 )
 
