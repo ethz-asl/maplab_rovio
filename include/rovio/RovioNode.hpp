@@ -515,9 +515,6 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
     return;
   }
 
-  CHECK_GT(state.imuOutputCov.cols(), 0);
-  CHECK_GT(state.imuOutputCov.rows(), 0);
-
   ros::Time rosTimeAfterUpdate = ros::Time(state.timeAfterUpdate);
 
   // TODO(mfehr): there has to be a better way than typedef-ing.
@@ -543,19 +540,17 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
   }
 
   // Send IMU pose.
-
   {
-    const StandardOutput &imuOutput = state.imuOutput;
+    const Eigen::Vector3d &WrWB = state.WrWB;
+    const kindr::RotationQuaternionPD &qBW = state.qBW;
 
     tf::StampedTransform tf_transform_MW;
     tf_transform_MW.frame_id_ = world_frame_;
     tf_transform_MW.child_frame_id_ = imu_frame_;
     tf_transform_MW.stamp_ = rosTimeAfterUpdate;
-    tf_transform_MW.setOrigin(tf::Vector3(
-        imuOutput.WrWB()(0), imuOutput.WrWB()(1), imuOutput.WrWB()(2)));
+    tf_transform_MW.setOrigin(tf::Vector3(WrWB(0), WrWB(1), WrWB(2)));
     tf_transform_MW.setRotation(
-        tf::Quaternion(imuOutput.qBW().x(), imuOutput.qBW().y(),
-                       imuOutput.qBW().z(), -imuOutput.qBW().w()));
+        tf::Quaternion(qBW.x(), qBW.y(), qBW.z(), -qBW.w()));
 
     // Publish.
     tb_.sendTransform(tf_transform_MW);
@@ -580,18 +575,21 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
 
   // Publish Odometry
   if (pubOdometry_.getNumSubscribers() > 0 || forceOdometryPublishing_) {
-    const Eigen::MatrixXd &imuOutputCov = state.imuOutputCov;
-    const StandardOutput &imuOutput = state.imuOutput;
+    const Eigen::MatrixXd &imuCovariance = state.imuCovariance;
+    const Eigen::Vector3d& WrWB = state.WrWB;
+    const kindr::RotationQuaternionPD& qBW = state.qBW;
+    const Eigen::Vector3d& BvB = state.BvB;
+    const Eigen::Vector3d& BwWB = state.BwWB;
 
     odometryMsg_.header.seq = msgSeq_;
     odometryMsg_.header.stamp = rosTimeAfterUpdate;
-    odometryMsg_.pose.pose.position.x = imuOutput.WrWB()(0);
-    odometryMsg_.pose.pose.position.y = imuOutput.WrWB()(1);
-    odometryMsg_.pose.pose.position.z = imuOutput.WrWB()(2);
-    odometryMsg_.pose.pose.orientation.w = -imuOutput.qBW().w();
-    odometryMsg_.pose.pose.orientation.x = imuOutput.qBW().x();
-    odometryMsg_.pose.pose.orientation.y = imuOutput.qBW().y();
-    odometryMsg_.pose.pose.orientation.z = imuOutput.qBW().z();
+    odometryMsg_.pose.pose.position.x = WrWB(0);
+    odometryMsg_.pose.pose.position.y = WrWB(1);
+    odometryMsg_.pose.pose.position.z = WrWB(2);
+    odometryMsg_.pose.pose.orientation.w = -qBW.w();
+    odometryMsg_.pose.pose.orientation.x = qBW.x();
+    odometryMsg_.pose.pose.orientation.y = qBW.y();
+    odometryMsg_.pose.pose.orientation.z = qBW.z();
     for (unsigned int i = 0; i < 6; i++) {
       unsigned int ind1 = mtOutput::template getId<mtOutput::_pos>() + i;
       if (i >= 3)
@@ -601,19 +599,19 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
         if (j >= 3)
           ind2 = mtOutput::template getId<mtOutput::_att>() + j - 3;
 
-        CHECK_LT(ind1, imuOutputCov.rows());
+        CHECK_LT(ind1, imuCovariance.rows());
         CHECK_GE(ind1, 0);
-        CHECK_LT(ind2, imuOutputCov.cols());
+        CHECK_LT(ind2, imuCovariance.cols());
         CHECK_GE(ind2, 0);
-        odometryMsg_.pose.covariance[j + 6 * i] = imuOutputCov(ind1, ind2);
+        odometryMsg_.pose.covariance[j + 6 * i] = imuCovariance(ind1, ind2);
       }
     }
-    odometryMsg_.twist.twist.linear.x = imuOutput.BvB()(0);
-    odometryMsg_.twist.twist.linear.y = imuOutput.BvB()(1);
-    odometryMsg_.twist.twist.linear.z = imuOutput.BvB()(2);
-    odometryMsg_.twist.twist.angular.x = imuOutput.BwWB()(0);
-    odometryMsg_.twist.twist.angular.y = imuOutput.BwWB()(1);
-    odometryMsg_.twist.twist.angular.z = imuOutput.BwWB()(2);
+    odometryMsg_.twist.twist.linear.x = BvB(0);
+    odometryMsg_.twist.twist.linear.y = BvB(1);
+    odometryMsg_.twist.twist.linear.z = BvB(2);
+    odometryMsg_.twist.twist.angular.x = BwWB(0);
+    odometryMsg_.twist.twist.angular.y = BwWB(1);
+    odometryMsg_.twist.twist.angular.z = BwWB(2);
     for (unsigned int i = 0; i < 6; i++) {
       unsigned int ind1 = mtOutput::template getId<mtOutput::_vel>() + i;
       if (i >= 3)
@@ -623,11 +621,11 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
         if (j >= 3)
           ind2 = mtOutput::template getId<mtOutput::_ror>() + j - 3;
 
-        CHECK_LT(ind1, imuOutputCov.rows());
+        CHECK_LT(ind1, imuCovariance.rows());
         CHECK_GE(ind1, 0);
-        CHECK_LT(ind2, imuOutputCov.cols());
+        CHECK_LT(ind2, imuCovariance.cols());
         CHECK_GE(ind2, 0);
-        odometryMsg_.twist.covariance[j + 6 * i] = imuOutputCov(ind1, ind2);
+        odometryMsg_.twist.covariance[j + 6 * i] = imuCovariance(ind1, ind2);
       }
     }
 
@@ -637,25 +635,19 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
 
   if (pubPoseWithCovStamped_.getNumSubscribers() > 0 ||
       forcePoseWithCovariancePublishing_) {
-    const StandardOutput &imuOutput = state.imuOutput;
-    const Eigen::MatrixXd &imuOutputCov = state.imuOutputCov;
+    const Eigen::MatrixXd &imuCovariance = state.imuCovariance;
+    const Eigen::Vector3d &WrWB = state.WrWB;
+    const kindr::RotationQuaternionPD &qBW = state.qBW;
 
     estimatedPoseWithCovarianceStampedMsg_.header.seq = msgSeq_;
     estimatedPoseWithCovarianceStampedMsg_.header.stamp = rosTimeAfterUpdate;
-    estimatedPoseWithCovarianceStampedMsg_.pose.pose.position.x =
-        imuOutput.WrWB()(0);
-    estimatedPoseWithCovarianceStampedMsg_.pose.pose.position.y =
-        imuOutput.WrWB()(1);
-    estimatedPoseWithCovarianceStampedMsg_.pose.pose.position.z =
-        imuOutput.WrWB()(2);
-    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.w =
-        -imuOutput.qBW().w();
-    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.x =
-        imuOutput.qBW().x();
-    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.y =
-        imuOutput.qBW().y();
-    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.z =
-        imuOutput.qBW().z();
+    estimatedPoseWithCovarianceStampedMsg_.pose.pose.position.x = WrWB(0);
+    estimatedPoseWithCovarianceStampedMsg_.pose.pose.position.y = WrWB(1);
+    estimatedPoseWithCovarianceStampedMsg_.pose.pose.position.z = WrWB(2);
+    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.w = -qBW.w();
+    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.x = qBW.x();
+    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.y = qBW.y();
+    estimatedPoseWithCovarianceStampedMsg_.pose.pose.orientation.z = qBW.z();
 
     for (unsigned int i = 0; i < 6; i++) {
       unsigned int ind1 = mtOutput::template getId<mtOutput::_pos>() + i;
@@ -666,12 +658,12 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
         if (j >= 3)
           ind2 = mtOutput::template getId<mtOutput::_att>() + j - 3;
 
-        CHECK_LT(ind1, imuOutputCov.rows());
+        CHECK_LT(ind1, imuCovariance.rows());
         CHECK_GE(ind1, 0);
-        CHECK_LT(ind2, imuOutputCov.cols());
+        CHECK_LT(ind2, imuCovariance.cols());
         CHECK_GE(ind2, 0);
         estimatedPoseWithCovarianceStampedMsg_.pose.covariance[j + 6 * i] =
-            imuOutputCov(ind1, ind2);
+            imuCovariance(ind1, ind2);
       }
     }
 
@@ -681,17 +673,18 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
 
   // Send IMU pose message.
   if (pubTransform_.getNumSubscribers() > 0 || forceTransformPublishing_) {
-    const StandardOutput &imuOutput = state.imuOutput;
+    const Eigen::Vector3d &WrWB = state.WrWB;
+    const kindr::RotationQuaternionPD &qBW = state.qBW;
 
     transformMsg_.header.seq = msgSeq_;
     transformMsg_.header.stamp = rosTimeAfterUpdate;
-    transformMsg_.transform.translation.x = imuOutput.WrWB()(0);
-    transformMsg_.transform.translation.y = imuOutput.WrWB()(1);
-    transformMsg_.transform.translation.z = imuOutput.WrWB()(2);
-    transformMsg_.transform.rotation.x = imuOutput.qBW().x();
-    transformMsg_.transform.rotation.y = imuOutput.qBW().y();
-    transformMsg_.transform.rotation.z = imuOutput.qBW().z();
-    transformMsg_.transform.rotation.w = -imuOutput.qBW().w();
+    transformMsg_.transform.translation.x = WrWB(0);
+    transformMsg_.transform.translation.y = WrWB(1);
+    transformMsg_.transform.translation.z = WrWB(2);
+    transformMsg_.transform.rotation.x = qBW.x();
+    transformMsg_.transform.rotation.y = qBW.y();
+    transformMsg_.transform.rotation.z = qBW.z();
+    transformMsg_.transform.rotation.w = -qBW.w();
 
     // Publish.
     pubTransform_.publish(transformMsg_);

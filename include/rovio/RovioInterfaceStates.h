@@ -29,33 +29,7 @@
 #ifndef ROVIO_ROVIO_INTERFACE_STATE_H_
 #define ROVIO_ROVIO_INTERFACE_STATE_H_
 
-#include <functional>
-#include <memory>
-#include <mutex>
-#include <queue>
-
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/TwistWithCovarianceStamped.h>
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/image_encodings.h>
-#include <std_srvs/Empty.h>
-#include <tf/transform_broadcaster.h>
-#include <visualization_msgs/Marker.h>
-
-#include "rovio/CoordinateTransform/FeatureOutput.hpp"
-#include "rovio/CoordinateTransform/FeatureOutputReadable.hpp"
-#include "rovio/CoordinateTransform/LandmarkOutput.hpp"
-#include "rovio/CoordinateTransform/RovioOutput.hpp"
-#include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "rovio/SrvResetToPose.h"
 
 namespace rovio {
 
@@ -75,22 +49,29 @@ template <typename FILTER> struct RovioFeatureState {
 
   static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
 
+  // Since we use a fixed number of features, the (in)valid ones are determined with this array.
   bool isFeatureValid[kMaxNumFeatures];
 
   int featureObserverCamIDs[kMaxNumFeatures];
   int featureIndices[kMaxNumFeatures];
 
+  // Start and end points of the feature uncertainty visualization (a line along
+  // the bearing vector centered around the current estimate of the feature).
   Eigen::Vector3d CrCPm_vec[kMaxNumFeatures];
   Eigen::Vector3d CrCPp_vec[kMaxNumFeatures];
 
+  // Feature bearing vector.
   Eigen::Vector3f bearings[kMaxNumFeatures];
 
+  // Feature position and covariance.
   Eigen::Vector3f MrMP_vec[kMaxNumFeatures];
   Eigen::Matrix3f cov_MrMP_vec[kMaxNumFeatures];
 
+  // Feature distance along the bearing vector with covariance.
   float distances[kMaxNumFeatures];
   float distances_cov[kMaxNumFeatures];
 
+  // Feature status.
   uint32_t status_vec[kMaxNumFeatures];
 };
 
@@ -109,26 +90,27 @@ template <typename FILTER> struct RovioState {
   // meaningful data.
   bool isInitialized = false;
 
+  // Time stamp of this state.
   double timeAfterUpdate;
 
-  // Inertial pose.
-  bool hasInertialPose = false;
-  Eigen::Vector3d IrIW;
-  kindr::RotationQuaternionPD qWI;
+  // Overall filter state covariance.
+  Eigen::MatrixXd filterCovariance;
 
+  // Camera extrinsics:
+  // Transformation between IMU frame (M) and camera frame (C).
   kindr::RotationQuaternionPD qCM[kNumCameras];
   Eigen::Vector3d MrMC[kNumCameras];
 
-  // Camera extrinsics.
-  Eigen::Vector3d BrBC[kNumCameras];
-  kindr::RotationQuaternionPD qCB[kNumCameras];
-
-  Eigen::MatrixXd filterCovariance;
-
-  // IMU state and convariance.
-  StandardOutput imuOutput;
-  Eigen::MatrixXd imuOutputCov;
-
+  // IMU frame:
+  // Transformation between world frame (W) and the IMU frame (B).
+  Eigen::Vector3d WrWB;
+  kindr::RotationQuaternionPD qBW;
+  // Velocities of IMU frame (B).
+  Eigen::Vector3d BvB;
+  Eigen::Vector3d BwWB;
+  // IMU frame covariance
+  Eigen::MatrixXd imuCovariance;
+  // IMU biases.
   Eigen::Vector3d gyb;
   Eigen::Vector3d acb;
 
@@ -140,11 +122,18 @@ template <typename FILTER> struct RovioState {
       mtPoseUpdate;
   mtPoseUpdate *mpPoseUpdate;
 
-  // Feature state.
+  // Optional: Localization transform:
+  // Transformation between world frame (= global base frame) and inertial frame
+  // (= mission/odometry base frame).
+  bool hasInertialPose = false;
+  Eigen::Vector3d IrIW;
+  kindr::RotationQuaternionPD qWI;
+
+  // Optional: Feature state.
   bool hasFeatureUpdate = false;
   std::unique_ptr<RovioFeatureState<FILTER>> feature_state;
 
-  // Path state.
+  // Optional: Path state.
   bool hasPatchUpdate = false;
   std::unique_ptr<RovioPatchState<FILTER>> patch_state;
 };

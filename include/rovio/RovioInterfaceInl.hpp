@@ -347,9 +347,6 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
   // Get camera extrinsics.
   state.updateMultiCameraExtrinsics(&mpFilter_->multiCamera_);
   for (unsigned int i = 0u; i < mtState::nCam_; ++i) {
-    filter_update->BrBC[i] = mpFilter_->multiCamera_.BrBC_[i];
-    filter_update->qCB[i] = mpFilter_->multiCamera_.qCB_[i];
-
     filter_update->MrMC[i] = state.MrMC(i);
     filter_update->qCM[i] = state.qCM(i);
   }
@@ -364,11 +361,21 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
   }
 
   // IMU state and IMU covariance.
-  imuOutputCT_.transformState(state, filter_update->imuOutput);
+  StandardOutput imuOutput;
+  imuOutputCT_.transformState(state, imuOutput);
+
+  // IMU frame:
+  // Transformation between world frame (W) and the IMU frame (B).
+  filter_update->WrWB = imuOutput.WrWB();
+  filter_update->qBW = imuOutput.qBW();
+  // Velocities of IMU frame (B).
+  filter_update->BvB = imuOutput.BvB();
+  filter_update->BwWB = imuOutput.BwWB();
+
   imuOutputCT_.transformCovMat(state, filter_update->filterCovariance,
-                               filter_update->imuOutputCov);
-  CHECK_GT(filter_update->imuOutputCov.cols(), 0);
-  CHECK_GT(filter_update->imuOutputCov.rows(), 0);
+                               filter_update->imuCovariance);
+  CHECK_GT(filter_update->imuCovariance.cols(), 0);
+  CHECK_GT(filter_update->imuCovariance.rows(), 0);
 
   // IMU biases.
   filter_update->gyb = state.gyb();
