@@ -63,35 +63,17 @@ class Camera{
    * */
   virtual ~Camera();
 
-  /** \brief Loads and sets the intrinsic parameter matrix K_ from yaml-file.
-   *
-   *   @param filename - Path to the yaml-file, containing the intrinsic parameter matrix coefficients.
-   */
-  void loadCameraMatrix(const std::string& filename);
-
-  /** \brief Loads and sets the distortion parameters {k1_, k2_, k3_, p1_, p2_} for the Radtan distortion model from
-   *         yaml-file.
-   *   @param filename - Path to the yaml-file, containing the distortion coefficients.
-   */
-  void loadRadtan(const std::string& filename);
-
-  /** \brief Loads and sets the distortion parameters {k1_, k2_, k3_, k4_} for the Equidistant distortion model from
-   *         yaml-file.
-   *   @param filename - Path to the yaml-file, containing the distortion coefficients.
-   */
-  void loadEquidist(const std::string& filename);
-
   /** \brief Loads and sets the distortion model and the corresponding distortion coefficients from yaml-file.
    *
    *   @param filename - Path to the yaml-file, containing the distortion model and distortion coefficient data.
    */
-  void load(const std::string& filename);
+  bool loadCalibrationFromFile(const std::string& filename);
 
   /** \brief Initialize camera model from CameraCalibration struct.
    *
    *   @param calibration - Camera calibration struct.
    */
-  bool init(const CameraCalibration& calibration);
+  bool setCalibration(const CameraCalibration& calibration);
 
   /** \brief Distorts a point on the unit plane (in camera coordinates) according to the Radtan distortion model.
    *
