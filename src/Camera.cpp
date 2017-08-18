@@ -15,82 +15,41 @@ namespace rovio{
 
   Camera::~Camera(){};
 
-  void Camera::loadCameraMatrix(const std::string& filename){
-    YAML::Node config = YAML::LoadFile(filename);
-    K_(0,0) = config["camera_matrix"]["data"][0].as<double>();
-    K_(0,1) = config["camera_matrix"]["data"][1].as<double>();
-    K_(0,2) = config["camera_matrix"]["data"][2].as<double>();
-    K_(1,0) = config["camera_matrix"]["data"][3].as<double>();
-    K_(1,1) = config["camera_matrix"]["data"][4].as<double>();
-    K_(1,2) = config["camera_matrix"]["data"][5].as<double>();
-    K_(2,0) = config["camera_matrix"]["data"][6].as<double>();
-    K_(2,1) = config["camera_matrix"]["data"][7].as<double>();
-    K_(2,2) = config["camera_matrix"]["data"][8].as<double>();
-    std::cout << "Set Camera Matrix to:\n" << K_ << std::endl;
+  bool Camera::loadCalibrationFromFile(const std::string &filename) {
+    CameraCalibration calibration;
+    calibration.loadFromFile(filename);
+    return setCalibration(calibration);
   }
 
-  void Camera::loadRadtan(const std::string& filename){
-    loadCameraMatrix(filename);
-    YAML::Node config = YAML::LoadFile(filename);
-    k1_ = config["distortion_coefficients"]["data"][0].as<double>();
-    k2_ = config["distortion_coefficients"]["data"][1].as<double>();
-    p1_ = config["distortion_coefficients"]["data"][2].as<double>();
-    p2_ = config["distortion_coefficients"]["data"][3].as<double>();
-    k3_ = config["distortion_coefficients"]["data"][4].as<double>();
-    std::cout << "Set distortion parameters (Radtan) to: k1(" << k1_ << "), k2(" << k2_ << "), k3(" << k3_ << "), p1(" << p1_ << "), p2(" << p2_ << ")" << std::endl;
-  }
+  bool Camera::setCalibration(const CameraCalibration &calibration) {
+    // Set camera intrinsics.
+    K_ = calibration.K_;
 
-  void Camera::loadEquidist(const std::string& filename){
-    loadCameraMatrix(filename);
-    YAML::Node config = YAML::LoadFile(filename);
-    k1_ = config["distortion_coefficients"]["data"][0].as<double>();
-    k2_ = config["distortion_coefficients"]["data"][1].as<double>();
-    k3_ = config["distortion_coefficients"]["data"][2].as<double>();
-    k4_ = config["distortion_coefficients"]["data"][3].as<double>();
-    std::cout << "Set distortion parameters (Equidist) to: k1(" << k1_ << "), k2(" << k2_ << "), k3(" << k3_ << "), k4(" << k4_ << ")" << std::endl;
-  }
-
-  void Camera::load(const std::string& filename){
-    YAML::Node config = YAML::LoadFile(filename);
-    std::string distortionModel;
-    distortionModel = config["distortion_model"].as<std::string>();
-    if(distortionModel == "plumb_bob"){
-      type_ = DistortionModel::RADTAN;
-      loadRadtan(filename);
-    } else if(distortionModel == "equidistant"){
-      type_ = DistortionModel::EQUIDIST;
-      loadEquidist(filename);
-    } else {
-      std::cout << "ERROR: no camera Model detected!" << std::endl;
-    }
-  }
-
-  bool Camera::init(const CameraCalibration &calibration) {
     // Set distortion model.
     type_ = calibration.distortionModel_;
 
     switch (type_) {
     case DistortionModel::RADTAN:
-      CHECK_EQ(calibration.parameters_.size(),
-               NUM_DISTORTION_PARAMS[static_cast<int>(type_)]);
+      CHECK_EQ(calibration.distortion_params_.size(),
+               NUM_DISTORTION_MODEL_PARAMS[static_cast<int>(type_)]);
 
-      k1_ = calibration.parameters_[0];
-      k2_ = calibration.parameters_[1];
-      p1_ = calibration.parameters_[2];
-      p2_ = calibration.parameters_[3];
-      k3_ = calibration.parameters_[4];
+      k1_ = calibration.distortion_params_[0];
+      k2_ = calibration.distortion_params_[1];
+      p1_ = calibration.distortion_params_[2];
+      p2_ = calibration.distortion_params_[3];
+      k3_ = calibration.distortion_params_[4];
       std::cout << "Set distortion parameters (Radtan) to: k1(" << k1_
                 << "), k2(" << k2_ << "), k3(" << k3_ << "), p1(" << p1_
                 << "), p2(" << p2_ << ")" << std::endl;
       break;
     case DistortionModel::EQUIDIST:
-      CHECK_EQ(calibration.parameters_.size(),
-               NUM_DISTORTION_PARAMS[static_cast<int>(type_)]);
+      CHECK_EQ(calibration.distortion_params_.size(),
+               NUM_DISTORTION_MODEL_PARAMS[static_cast<int>(type_)]);
 
-      k1_ = calibration.parameters_[0];
-      k2_ = calibration.parameters_[1];
-      k3_ = calibration.parameters_[2];
-      k4_ = calibration.parameters_[3];
+      k1_ = calibration.distortion_params_[0];
+      k2_ = calibration.distortion_params_[1];
+      k3_ = calibration.distortion_params_[2];
+      k4_ = calibration.distortion_params_[3];
       std::cout << "Set distortion parameters (Equidist) to: k1(" << k1_
                 << "), k2(" << k2_ << "), k3(" << k3_ << "), k4(" << k4_ << ")"
                 << std::endl;

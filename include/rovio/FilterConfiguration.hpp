@@ -29,14 +29,28 @@
 #ifndef ROVIO_FILTER_CONFIGURATION_HPP_
 #define ROVIO_FILTER_CONFIGURATION_HPP_
 
-#include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/info_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 namespace rovio {
 struct FilterConfiguration : public boost::property_tree::ptree {
 
-  // TODO(mfehr): Add convenience functions to change config.
+  // TODO(mfehr): This is just an example of a convenience function to set the
+  // filter config programmatically rather than using the file.
 
+  /** \brief Should the measured poses be vizualized.
+   * */
+  bool getDoVisualization() const {
+    return get("PoseUpdate.doVisualization", false);
+  }
+
+  /** \brief Should the measured poses be vizualized.
+   * */
+  void setDoVisualization(const bool doVisualization) {
+    put("PoseUpdate.doVisualization", doVisualization);
+  }
+
+  // TODO(mfehr): Add convenience functions to change config.
 };
 
 } // namespace rovio

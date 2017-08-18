@@ -78,7 +78,8 @@ class FeatureTrackerNode{
     min_feature_count_ = 50;
     max_feature_count_ = 20; // Maximal number of feature which is added at a time (not total)
     cv::namedWindow("Tracker");
-    multiCamera_.cameras_[0].load("/home/michael/calibrations/p22035_equidist.yaml");
+    multiCamera_.cameras_[0].loadCalibrationFromFile(
+        "/home/michael/calibrations/p22035_equidist.yaml");
     fsm_.allocateMissing();
   };
 

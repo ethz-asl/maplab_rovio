@@ -183,7 +183,8 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
     }
     for(int camID = 0;camID<mtState::nCam_;camID++){
       if (!cameraCalibrationFile_[camID].empty()) {
-        multiCamera_.cameras_[camID].load(cameraCalibrationFile_[camID]);
+        multiCamera_.cameras_[camID].loadCalibrationFromFile(
+            cameraCalibrationFile_[camID]);
       }
     }
     for(int i=0;i<FILTERSTATE::mtState::nMax_;i++){
