@@ -59,6 +59,8 @@ static const std::string DIST_COEFFS = "distortion_coefficients";
 static const std::string DATA = "data";
 
 struct CameraCalibration {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   /** \brief Camera intrinsics.
    * */
   Eigen::Matrix3d K_;
