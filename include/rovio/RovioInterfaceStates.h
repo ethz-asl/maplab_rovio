@@ -114,10 +114,12 @@ template <typename FILTER> struct RovioState {
   Eigen::Vector3d gyb;
   Eigen::Vector3d acb;
 
+  // TODO(mfehr): We should try to get rid of those...
+  // These objects contain configuration variables that are needed to determine
+  // if a certain topic should be published or not.
   typedef typename std::tuple_element<0, typename FILTER::mtUpdates>::type
       mtImgUpdate;
   mtImgUpdate *mpImgUpdate;
-
   typedef typename std::tuple_element<1, typename FILTER::mtUpdates>::type
       mtPoseUpdate;
   mtPoseUpdate *mpPoseUpdate;

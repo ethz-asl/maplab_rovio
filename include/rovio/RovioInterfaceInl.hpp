@@ -532,7 +532,7 @@ template <typename FILTER> bool RovioInterface<FILTER>::updateFilter() {
   RovioState<FILTER> state;
   const bool hasNewState = getState(&state);
   if (hasNewState) {
-    for (RovioStateCallback callback : filter_update_state_callbacks_) {
+    for (const RovioStateCallback& callback : filter_update_state_callbacks_) {
       callback(state);
     }
   }
@@ -546,13 +546,13 @@ template <typename FILTER> void RovioInterface<FILTER>::visualizeUpdate() {
     if (!mpFilter_->safe_.img_[i].empty() &&
         mpImgUpdate_->doFrameVisualisation_) {
       cv::imshow("Tracker" + std::to_string(i), mpFilter_->safe_.img_[i]);
-      cv::waitKey(3);
+      cv::waitKey(1);
     }
   }
   if (!mpFilter_->safe_.patchDrawing_.empty() &&
       mpImgUpdate_->visualizePatches_) {
     cv::imshow("Patches", mpFilter_->safe_.patchDrawing_);
-    cv::waitKey(3);
+    cv::waitKey(1);
   }
 
   mtState &state = mpFilter_->safe_.state_;

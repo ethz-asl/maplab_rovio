@@ -60,7 +60,7 @@ namespace rovio {
  *
  *  @tparam FILTER  - \ref rovio::RovioFilter
  */
-template <typename FILTER> class RovioNode {
+template <typename FILTER> class RovioRosNode {
 public:
   typedef FILTER mtFilter;
 
@@ -122,7 +122,7 @@ public:
 
   /** \brief Constructor
    */
-  RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
+  RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
             RovioInterface<FILTER>* rovio_interface);
 
   /** \brief Callback for IMU-Messages. Adds IMU measurements (as prediction
@@ -189,13 +189,13 @@ public:
 
   static void publishStateCallback(const RovioState<FILTER> &state,
                                    void *this_pointer) {
-    RovioNode<FILTER> *self = static_cast<RovioNode<FILTER> *>(this_pointer);
+    RovioRosNode<FILTER> *self = static_cast<RovioRosNode<FILTER> *>(this_pointer);
     self->publishState(state);
   }
 };
 
 template <typename FILTER>
-RovioNode<FILTER>::RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
+RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
                              RovioInterface<FILTER>* rovio_interface)
     : rovio_interface_(rovio_interface), nh_(nh), nh_private_(nh_private) {
 
@@ -214,23 +214,23 @@ RovioNode<FILTER>::RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
   gotFirstMessages_ = false;
 
   // Subscribe topics
-  subImu_ = nh_.subscribe("imu0", 1000, &RovioNode::imuCallback, this);
+  subImu_ = nh_.subscribe("imu0", 1000, &RovioRosNode::imuCallback, this);
   subImg0_ =
-      nh_.subscribe("cam0/image_raw", 1000, &RovioNode::imgCallback0, this);
+      nh_.subscribe("cam0/image_raw", 1000, &RovioRosNode::imgCallback0, this);
   subImg1_ =
-      nh_.subscribe("cam1/image_raw", 1000, &RovioNode::imgCallback1, this);
+      nh_.subscribe("cam1/image_raw", 1000, &RovioRosNode::imgCallback1, this);
   subGroundtruth_ =
-      nh_.subscribe("pose", 1000, &RovioNode::groundtruthCallback, this);
+      nh_.subscribe("pose", 1000, &RovioRosNode::groundtruthCallback, this);
   subGroundtruthOdometry_ = nh_.subscribe(
-      "odometry", 1000, &RovioNode::groundtruthOdometryCallback, this);
+      "odometry", 1000, &RovioRosNode::groundtruthOdometryCallback, this);
   subVelocity_ =
-      nh_.subscribe("abss/twist", 1000, &RovioNode::velocityCallback, this);
+      nh_.subscribe("abss/twist", 1000, &RovioRosNode::velocityCallback, this);
 
   // Initialize ROS service servers.
   srvResetFilter_ = nh_.advertiseService(
-      "rovio/reset", &RovioNode::resetServiceCallback, this);
+      "rovio/reset", &RovioRosNode::resetServiceCallback, this);
   srvResetToPoseFilter_ = nh_.advertiseService(
-      "rovio/reset_to_pose", &RovioNode::resetToPoseServiceCallback, this);
+      "rovio/reset_to_pose", &RovioRosNode::resetToPoseServiceCallback, this);
 
   // Advertise topics
   pubTransform_ =
@@ -371,12 +371,12 @@ RovioNode<FILTER>::RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
 
   // Register state update callback.
   typename RovioInterface<FILTER>::RovioStateCallback callback = std::bind(
-      &RovioNode<FILTER>::publishStateCallback, std::placeholders::_1, this);
+      &RovioRosNode<FILTER>::publishStateCallback, std::placeholders::_1, this);
   rovio_interface_->registerStateUpdateCallback(callback);
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::imuCallback(const sensor_msgs::Imu::ConstPtr &imu_msg) {
+void RovioRosNode<FILTER>::imuCallback(const sensor_msgs::Imu::ConstPtr &imu_msg) {
   Eigen::Vector3d acc(imu_msg->linear_acceleration.x,
                       imu_msg->linear_acceleration.y,
                       imu_msg->linear_acceleration.z);
@@ -388,7 +388,7 @@ void RovioNode<FILTER>::imuCallback(const sensor_msgs::Imu::ConstPtr &imu_msg) {
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::imgCallback0(const sensor_msgs::ImageConstPtr &img) {
+void RovioRosNode<FILTER>::imgCallback0(const sensor_msgs::ImageConstPtr &img) {
   constexpr int camID = 0;
   if (camID < RovioState<FILTER>::kNumCameras) {
     imgCallback(img, camID);
@@ -399,7 +399,7 @@ void RovioNode<FILTER>::imgCallback0(const sensor_msgs::ImageConstPtr &img) {
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::imgCallback1(const sensor_msgs::ImageConstPtr &img) {
+void RovioRosNode<FILTER>::imgCallback1(const sensor_msgs::ImageConstPtr &img) {
   constexpr int camID = 1;
   if (camID < RovioState<FILTER>::kNumCameras) {
     imgCallback(img, camID);
@@ -410,7 +410,7 @@ void RovioNode<FILTER>::imgCallback1(const sensor_msgs::ImageConstPtr &img) {
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
+void RovioRosNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
                                     const int camID) {
   CHECK_LT(camID, RovioState<FILTER>::kNumCameras);
 
@@ -431,7 +431,7 @@ void RovioNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::groundtruthCallback(
+void RovioRosNode<FILTER>::groundtruthCallback(
     const geometry_msgs::TransformStamped::ConstPtr &transform) {
 
   Eigen::Vector3d JrJV(transform->transform.translation.x,
@@ -445,7 +445,7 @@ void RovioNode<FILTER>::groundtruthCallback(
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::groundtruthOdometryCallback(
+void RovioRosNode<FILTER>::groundtruthOdometryCallback(
     const nav_msgs::Odometry::ConstPtr &odometry) {
 
   Eigen::Vector3d JrJV(odometry->pose.pose.position.x,
@@ -466,7 +466,7 @@ void RovioNode<FILTER>::groundtruthOdometryCallback(
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::velocityCallback(
+void RovioRosNode<FILTER>::velocityCallback(
     const geometry_msgs::TwistStamped::ConstPtr &velocity) {
   Eigen::Vector3d AvM(velocity->twist.linear.x, velocity->twist.linear.y,
                       velocity->twist.linear.z);
@@ -476,7 +476,7 @@ void RovioNode<FILTER>::velocityCallback(
 }
 
 template <typename FILTER>
-bool RovioNode<FILTER>::resetServiceCallback(
+bool RovioRosNode<FILTER>::resetServiceCallback(
     std_srvs::Empty::Request & /*request*/,
     std_srvs::Empty::Response & /*response*/) {
   rovio_interface_->requestReset();
@@ -484,7 +484,7 @@ bool RovioNode<FILTER>::resetServiceCallback(
 }
 
 template <typename FILTER>
-bool RovioNode<FILTER>::resetToPoseServiceCallback(
+bool RovioRosNode<FILTER>::resetToPoseServiceCallback(
     rovio::SrvResetToPose::Request &request,
     rovio::SrvResetToPose::Response & /*response*/) {
   V3D WrWM(request.T_WM.position.x, request.T_WM.position.y,
@@ -498,7 +498,7 @@ bool RovioNode<FILTER>::resetToPoseServiceCallback(
 }
 
 template <typename FILTER>
-void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
+void RovioRosNode<FILTER>::publishState(const RovioState<FILTER> &state) {
 
   // Update the settings that determine if the current state contains
   // information about the patches and features or not.

@@ -42,7 +42,7 @@
 
 #include "rovio/RovioFilter.hpp"
 #include "rovio/RovioInterface.h"
-#include "rovio/RovioNode.hpp"
+#include "rovio/RovioRosNode.hpp"
 
 #define foreach BOOST_FOREACH
 
@@ -106,7 +106,7 @@ int main(int argc, char** argv){
   rovioInterface.makeTest();
 
   // Create the ROVIO ROS node and connect it to the interface.
-  rovio::RovioNode<mtFilter> rovioNode(nh, nh_private, &rovioInterface);
+  rovio::RovioRosNode<mtFilter> rovioNode(nh, nh_private, &rovioInterface);
 
   double resetTrigger = 0.0;
   nh_private.param("record_odometry", rovioNode.forceOdometryPublishing_, rovioNode.forceOdometryPublishing_);

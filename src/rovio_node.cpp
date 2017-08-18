@@ -40,7 +40,7 @@
 #pragma GCC diagnostic pop
 
 #include "rovio/RovioFilter.hpp"
-#include "rovio/RovioNode.hpp"
+#include "rovio/RovioRosNode.hpp"
 #ifdef MAKE_SCENE
 #include "rovio/RovioScene.hpp"
 #endif
@@ -114,7 +114,7 @@ int main(int argc, char** argv){
   rovioInterface.makeTest();
 
   // Create the ROVIO ROS node and connect it to the interface.
-  rovio::RovioNode<mtFilter> rovioNode(nh, nh_private, &rovioInterface);
+  rovio::RovioRosNode<mtFilter> rovioNode(nh, nh_private, &rovioInterface);
 
 #ifdef MAKE_SCENE
   // Scene
