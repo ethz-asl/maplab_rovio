@@ -11,6 +11,7 @@ add_definitions(-DROVIO_NCAM=${ROVIO_NCAM})
 add_definitions(-DROVIO_NLEVELS=${ROVIO_NLEVELS})
 add_definitions(-DROVIO_PATCHSIZE=${ROVIO_PATCHSIZE})
 add_definitions(-DROVIO_NPOSE=${ROVIO_NPOSE})
+add_definitions(-std=c++11)
 
 add_subdirectory(lightweight_filtering)
 
@@ -43,12 +44,14 @@ endif()
 
 find_package(PkgConfig)
 
-find_package(opencv3_catkin)
+find_package(glog_catkin REQUIRED)
+
+find_package(opencv3_catkin QUIET)
 if(opencv3_catkin_FOUND)
-  message("Found opencv3_catkin!")
+  message(STATUS "Found opencv3_catkin!")
   set(OPENCV_PACKAGE "opencv3_catkin")
 else()
-  message("Use the systems opencv installation!")
+  message(STATUS "Use the systems opencv installation!")
   set(OPENCV_PACKAGE "")
 endif()
 
@@ -110,14 +113,20 @@ catkin_package(
   yaml_cpp_catkin
 )
 
-include_directories(include ${catkin_INCLUDE_DIRS} ${YamlCpp_INCLUDE_DIRS})
+include_directories(include ${catkin_INCLUDE_DIRS} ${YamlCpp_INCLUDE_DIRS} ${glog_catkin_INCLUDE_DIRS})
 
 if(MAKE_SCENE)
-	add_library(${PROJECT_NAME} src/Camera.cpp src/FeatureCoordinates.cpp src/FeatureDistance.cpp src/Scene.cpp)
+	add_library(${PROJECT_NAME} src/Camera.cpp
+                              src/FeatureCoordinates.cpp
+                              src/FeatureDistance.cpp
+                              src/Scene.cpp)
 else()
-	add_library(${PROJECT_NAME} src/Camera.cpp src/FeatureCoordinates.cpp src/FeatureDistance.cpp)
+	add_library(${PROJECT_NAME} src/Camera.cpp
+                              src/FeatureCoordinates.cpp
+                              src/FeatureDistance.cpp)
 endif()
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${OpenMP_EXE_LINKER_FLAGS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARY})
+
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${OpenMP_EXE_LINKER_FLAGS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARY} ${glog_catkin_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} rovio_generate_messages_cpp)
 
 add_executable(rovio_node src/rovio_node.cpp)

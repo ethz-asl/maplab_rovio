@@ -26,19 +26,24 @@
 *
 */
 
+#include <iostream>
+#include <locale>
+#include <memory>
+#include <string>
+
+#include <Eigen/StdVector>
+#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/date_time/posix_time/posix_time_io.hpp>
+#include <boost/foreach.hpp>
+#include <glog/logging.h>
 #include <ros/package.h>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
-#include <memory>
-#include <iostream>
-#include <locale>
-#include <string>
-#include <Eigen/StdVector>
+
 #include "rovio/RovioFilter.hpp"
+#include "rovio/RovioInterface.h"
 #include "rovio/RovioNode.hpp"
-#include <boost/foreach.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/date_time/posix_time/posix_time_io.hpp>
+
 #define foreach BOOST_FOREACH
 
 #ifdef ROVIO_NMAXFEATURE
@@ -75,6 +80,8 @@ typedef rovio::RovioFilter<rovio::FilterState<nMax_,nLevels_,patchSize_,nCam_,nP
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "rovio");
+  google::InitGoogleLogging(argv[0]);
+
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 
@@ -99,6 +106,9 @@ int main(int argc, char** argv){
 
   // Node
   rovio::RovioNode<mtFilter> rovioNode(nh, nh_private, mpFilter);
+  rovio::RovioInterface<mtFilter> &rovioInterface =
+      rovioNode.getRovioInterface();
+
   rovioNode.makeTest();
   double resetTrigger = 0.0;
   nh_private.param("record_odometry", rovioNode.forceOdometryPublishing_, rovioNode.forceOdometryPublishing_);
@@ -193,9 +203,10 @@ int main(int argc, char** argv){
     }
     ros::spinOnce();
 
+    // TODO(mfehr): this could probably be done using the new state change callback.
     if(rovioNode.gotFirstMessages_){
-      static double lastSafeTime = rovioNode.mpFilter_->safe_.t_;
-      if(rovioNode.mpFilter_->safe_.t_ > lastSafeTime){
+      static double lastSafeTime = rovioInterface.getLastSafeTime();
+      if(rovioInterface.getLastSafeTime() > lastSafeTime){
         if(rovioNode.forceOdometryPublishing_) bagOut.write(odometry_topic_name,ros::Time::now(),rovioNode.odometryMsg_);
         if(rovioNode.forceTransformPublishing_) bagOut.write(transform_topic_name,ros::Time::now(),rovioNode.transformMsg_);
         for(int camID=0;camID<mtFilter::mtState::nCam_;camID++){
@@ -205,16 +216,14 @@ int main(int argc, char** argv){
         if(rovioNode.forcePclPublishing_) bagOut.write(pcl_topic_name,ros::Time::now(),rovioNode.pclMsg_);
         if(rovioNode.forceMarkersPublishing_) bagOut.write(u_rays_topic_name,ros::Time::now(),rovioNode.markerMsg_);
         if(rovioNode.forcePatchPublishing_) bagOut.write(patch_topic_name,ros::Time::now(),rovioNode.patchMsg_);
-        lastSafeTime = rovioNode.mpFilter_->safe_.t_;
+        lastSafeTime = rovioInterface.getLastSafeTime();
       }
       if(!isTriggerInitialized){
         lastTriggerTime = lastSafeTime;
         isTriggerInitialized = true;
       }
       if(resetTrigger>0.0 && lastSafeTime - lastTriggerTime > resetTrigger){
-        rovioNode.requestReset();
-        rovioNode.mpFilter_->init_.state_.WrWM() = rovioNode.mpFilter_->safe_.state_.WrWM();
-        rovioNode.mpFilter_->init_.state_.qWM() = rovioNode.mpFilter_->safe_.state_.qWM();
+        rovioInterface.resetToLastSafePose();
         lastTriggerTime = lastSafeTime;
       }
     }

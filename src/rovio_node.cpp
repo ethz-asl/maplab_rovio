@@ -30,6 +30,7 @@
 #include <memory>
 
 #include <Eigen/StdVector>
+#include <glog/logging.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"
@@ -87,6 +88,8 @@ void idleFunc(){
 
 int main(int argc, char** argv){
   ros::init(argc, argv, "rovio");
+  google::InitGoogleLogging(argv[0]);
+
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 
