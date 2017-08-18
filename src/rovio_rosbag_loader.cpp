@@ -40,8 +40,8 @@
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 
+#include "rovio/RovioInterfaceImpl.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "rovio/RovioInterface.h"
 #include "rovio/RovioRosNode.hpp"
 
 #define foreach BOOST_FOREACH
@@ -102,7 +102,7 @@ int main(int argc, char** argv){
   }
 
   // Set up ROVIO by using the RovioInterface.
-  rovio::RovioInterface<mtFilter> rovioInterface(filter_config, camera_calibration_files);
+  rovio::RovioInterfaceImpl<mtFilter> rovioInterface(filter_config, camera_calibration_files);
   rovioInterface.makeTest();
 
   // Create the ROVIO ROS node and connect it to the interface.

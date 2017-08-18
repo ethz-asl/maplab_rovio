@@ -75,8 +75,34 @@ template <typename FILTER> struct RovioFeatureState {
   uint32_t status_vec[kMaxNumFeatures];
 };
 
-template <typename FILTER> struct RovioState {
+struct RovioState {
+  virtual bool getIsInitialized() const = 0;
 
+  virtual double getTimeAfterUpdate() const = 0;
+
+  virtual const Eigen::MatrixXd& getFilterCovariance() const = 0;
+
+  virtual const kindr::RotationQuaternionPD& get_qCM(size_t camera_index) const = 0;
+  virtual const Eigen::Vector3d& get_MrMC(size_t camera_index) const = 0;
+
+  virtual const Eigen::Vector3d& get_WrWB() const = 0;
+  virtual const kindr::RotationQuaternionPD& get_qBW() const = 0;
+
+  virtual const Eigen::Vector3d& get_BvB() const = 0;
+  virtual const Eigen::Vector3d& get_BwWB() const = 0;
+
+  virtual const Eigen::MatrixXd& getImuCovariance() const = 0;
+
+  virtual const Eigen::Vector3d& getGyb() const = 0;
+  virtual const Eigen::Vector3d& getAcb() const = 0;
+
+  virtual bool getHasInertialPose() const = 0;
+  virtual const Eigen::Vector3d& get_IrIW() const = 0;
+  virtual const kindr::RotationQuaternionPD& get_qWI() const = 0;
+};
+
+template <typename FILTER>
+struct RovioStateImpl : public RovioState {
   static constexpr int kNumCameras = FILTER::mtFilterState::mtState::nCam_;
   static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
   static constexpr int kPatchSize = FILTER::mtFilterState::mtState::patchSize_;
@@ -85,6 +111,54 @@ template <typename FILTER> struct RovioState {
   static constexpr int kNumPoses = FILTER::mtFilterState::mtState::nPose_;
   static constexpr int kPatchArea = kPatchSize * kPatchSize;
   static constexpr int kPatchAreaTimesLevels = kPatchArea * kNumPatchLevels;
+
+  bool getIsInitialized() const {
+    return isInitialized;
+  }
+  double getTimeAfterUpdate() const {
+    return timeAfterUpdate;
+  }
+  const Eigen::MatrixXd& getFilterCovariance() const {
+    return filterCovariance;
+  }
+  const kindr::RotationQuaternionPD& get_qCM(size_t camera_index) const {
+    CHECK_LT(camera_index, kNumCameras);
+    return qCM[camera_index];
+  }
+  const Eigen::Vector3d& get_MrMC(size_t camera_index) const {
+    CHECK_LT(camera_index, kNumCameras);
+    return MrMC[camera_index];
+  }
+  const Eigen::Vector3d& get_WrWB() const {
+    return WrWB;
+  }
+  const kindr::RotationQuaternionPD& get_qBW() const {
+    return qBW;
+  }
+  const Eigen::Vector3d& get_BvB() const {
+    return BvB;
+  }
+  const Eigen::Vector3d& get_BwWB() const {
+    return BwWB;
+  }
+  const Eigen::MatrixXd& getImuCovariance() const {
+    return imuCovariance;
+  }
+  const Eigen::Vector3d& getGyb() const {
+    return gyb;
+  }
+  const Eigen::Vector3d& getAcb() const {
+    return acb;
+  }
+  bool getHasInertialPose() const {
+    return hasInertialPose;
+  }
+  const Eigen::Vector3d& get_IrIW() const {
+    return IrIW;
+  }
+  const kindr::RotationQuaternionPD& get_qWI() const {
+    return qWI;
+  }
 
   // If the filter isn't initialized, the state variables do not contain any
   // meaningful data.

@@ -50,9 +50,9 @@
 #include <visualization_msgs/Marker.h>
 
 #include "rovio/RovioFilter.hpp"
-#include "rovio/RovioInterface.h"
-#include "rovio/RovioInterfaceStates.h"
 #include "rovio/SrvResetToPose.h"
+#include "RovioInterfaceImpl.hpp"
+#include "RovioInterfaceStates.hpp"
 
 namespace rovio {
 
@@ -63,8 +63,7 @@ namespace rovio {
 template <typename FILTER> class RovioRosNode {
 public:
   typedef FILTER mtFilter;
-
-  RovioInterface<mtFilter>* rovio_interface_;
+  RovioInterface* rovio_interface_;
 
   bool forceOdometryPublishing_;
   bool forcePoseWithCovariancePublishing_;
@@ -97,7 +96,7 @@ public:
   ros::Publisher pubPatch_;   /**<Publisher: Patch data.*/
   ros::Publisher pubMarkers_; /**<Publisher: Ros line marker, indicating the
                                  depth uncertainty of a landmark.*/
-  ros::Publisher pubExtrinsics_[RovioState<FILTER>::kNumCameras];
+  ros::Publisher pubExtrinsics_[RovioStateImpl<FILTER>::kNumCameras];
   ros::Publisher pubImuBias_;
 
   // Ros Messages
@@ -107,7 +106,7 @@ public:
   geometry_msgs::PoseWithCovarianceStamped
       estimatedPoseWithCovarianceStampedMsg_;
   geometry_msgs::PoseWithCovarianceStamped
-      extrinsicsMsg_[RovioState<FILTER>::kNumCameras];
+      extrinsicsMsg_[RovioStateImpl<FILTER>::kNumCameras];
   sensor_msgs::PointCloud2 pclMsg_;
   sensor_msgs::PointCloud2 patchMsg_;
   visualization_msgs::Marker markerMsg_;
@@ -123,7 +122,7 @@ public:
   /** \brief Constructor
    */
   RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
-            RovioInterface<FILTER>* rovio_interface);
+            RovioInterface* rovio_interface);
 
   /** \brief Callback for IMU-Messages. Adds IMU measurements (as prediction
    * measurements) to the filter.
@@ -172,7 +171,7 @@ public:
 
   /** \brief Get const access to the underlying rovio interface
   */
-  inline RovioInterface<FILTER> &getRovioInterface() {
+  /*inline RovioInterface& getRovioInterface() {
     CHECK(rovio_interface_ != nullptr);
     return *rovio_interface_;
   }
@@ -180,14 +179,14 @@ public:
   inline const RovioInterface<FILTER> &getRovioInterface() const {
     CHECK(rovio_interface_ != nullptr);
     return *rovio_interface_;
-  }
+  }*/
 
   /** \brief Executes the update step of the filter and publishes the updated
    * data.
    */
-  void publishState(const RovioState<FILTER> &state);
+  void publishState(const RovioState& state);
 
-  static void publishStateCallback(const RovioState<FILTER> &state,
+  static void publishStateCallback(const RovioState& state,
                                    void *this_pointer) {
     RovioRosNode<FILTER> *self = static_cast<RovioRosNode<FILTER> *>(this_pointer);
     self->publishState(state);
@@ -196,7 +195,7 @@ public:
 
 template <typename FILTER>
 RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
-                             RovioInterface<FILTER>* rovio_interface)
+                                   RovioInterface* rovio_interface)
     : rovio_interface_(rovio_interface), nh_(nh), nh_private_(nh_private) {
 
 #ifndef NDEBUG
@@ -245,7 +244,7 @@ RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_priv
 
   pub_T_J_W_transform =
       nh_.advertise<geometry_msgs::TransformStamped>("rovio/T_G_W", 1);
-  for (int camID = 0; camID < RovioState<FILTER>::kNumCameras; camID++) {
+  for (int camID = 0; camID < RovioStateImpl<FILTER>::kNumCameras; camID++) {
     pubExtrinsics_[camID] =
         nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>(
             "rovio/extrinsics" + std::to_string(camID), 1);
@@ -272,7 +271,7 @@ RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_priv
   odometryMsg_.header.frame_id = world_frame_;
   odometryMsg_.child_frame_id = imu_frame_;
   msgSeq_ = 1;
-  for (int camID = 0; camID < RovioState<FILTER>::kNumCameras; camID++) {
+  for (int camID = 0; camID < RovioStateImpl<FILTER>::kNumCameras; camID++) {
     extrinsicsMsg_[camID].header.frame_id = imu_frame_;
   }
   imuBiasMsg_.header.frame_id = world_frame_;
@@ -288,7 +287,7 @@ RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_priv
   pclMsg_.header.frame_id = imu_frame_;
   pclMsg_.height = 1; // Unordered point cloud.
   pclMsg_.width =
-      RovioState<FILTER>::kMaxNumFeatures; // Number of features/points.
+      RovioStateImpl<FILTER>::kMaxNumFeatures; // Number of features/points.
   const int nFieldsPcl = 18;
   std::string namePcl[nFieldsPcl] = {
       "id",  "camId", "rgb",  "status", "x",    "y",    "z",    "b_x",  "b_y",
@@ -325,14 +324,14 @@ RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_priv
   patchMsg_.header.frame_id = "";
   patchMsg_.height = 1; // Unordered point cloud.
   patchMsg_.width =
-      RovioState<FILTER>::kMaxNumFeatures; // Number of features/points.
+      RovioStateImpl<FILTER>::kMaxNumFeatures; // Number of features/points.
   const int nFieldsPatch = 5;
   std::string namePatch[nFieldsPatch] = {"id", "patch", "dx", "dy", "error"};
   int sizePatch[nFieldsPatch] = {4, 4, 4, 4, 4};
-  int countPatch[nFieldsPatch] = {1, RovioState<FILTER>::kPatchAreaTimesLevels,
-                                  RovioState<FILTER>::kPatchAreaTimesLevels,
-                                  RovioState<FILTER>::kPatchAreaTimesLevels,
-                                  RovioState<FILTER>::kPatchAreaTimesLevels};
+  int countPatch[nFieldsPatch] = {1, RovioStateImpl<FILTER>::kPatchAreaTimesLevels,
+                                  RovioStateImpl<FILTER>::kPatchAreaTimesLevels,
+                                  RovioStateImpl<FILTER>::kPatchAreaTimesLevels,
+                                  RovioStateImpl<FILTER>::kPatchAreaTimesLevels};
   int datatypePatch[nFieldsPatch] = {
       sensor_msgs::PointField::INT32, sensor_msgs::PointField::FLOAT32,
       sensor_msgs::PointField::FLOAT32, sensor_msgs::PointField::FLOAT32,
@@ -370,7 +369,7 @@ RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh, ros::NodeHandle &nh_priv
   markerMsg_.color.b = 0.0;
 
   // Register state update callback.
-  typename RovioInterface<FILTER>::RovioStateCallback callback = std::bind(
+  typename RovioInterface::RovioStateCallback callback = std::bind(
       &RovioRosNode<FILTER>::publishStateCallback, std::placeholders::_1, this);
   rovio_interface_->registerStateUpdateCallback(callback);
 }
@@ -390,7 +389,7 @@ void RovioRosNode<FILTER>::imuCallback(const sensor_msgs::Imu::ConstPtr &imu_msg
 template <typename FILTER>
 void RovioRosNode<FILTER>::imgCallback0(const sensor_msgs::ImageConstPtr &img) {
   constexpr int camID = 0;
-  if (camID < RovioState<FILTER>::kNumCameras) {
+  if (camID < RovioStateImpl<FILTER>::kNumCameras) {
     imgCallback(img, camID);
   } else {
     LOG_EVERY_N(WARNING, 100)
@@ -401,7 +400,7 @@ void RovioRosNode<FILTER>::imgCallback0(const sensor_msgs::ImageConstPtr &img) {
 template <typename FILTER>
 void RovioRosNode<FILTER>::imgCallback1(const sensor_msgs::ImageConstPtr &img) {
   constexpr int camID = 1;
-  if (camID < RovioState<FILTER>::kNumCameras) {
+  if (camID < RovioStateImpl<FILTER>::kNumCameras) {
     imgCallback(img, camID);
   } else {
     LOG_EVERY_N(WARNING, 100)
@@ -412,7 +411,7 @@ void RovioRosNode<FILTER>::imgCallback1(const sensor_msgs::ImageConstPtr &img) {
 template <typename FILTER>
 void RovioRosNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
                                     const int camID) {
-  CHECK_LT(camID, RovioState<FILTER>::kNumCameras);
+  CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras);
 
   // Get image from msg
   cv_bridge::CvImagePtr cv_ptr;
@@ -498,7 +497,8 @@ bool RovioRosNode<FILTER>::resetToPoseServiceCallback(
 }
 
 template <typename FILTER>
-void RovioRosNode<FILTER>::publishState(const RovioState<FILTER> &state) {
+void RovioRosNode<FILTER>::publishState(const RovioState& base_state) {
+  const RovioStateImpl<FILTER>& state = static_cast<const RovioStateImpl<FILTER>&>(base_state);
 
   // Update the settings that determine if the current state contains
   // information about the patches and features or not.
@@ -557,7 +557,7 @@ void RovioRosNode<FILTER>::publishState(const RovioState<FILTER> &state) {
   }
 
   // Send camera extrinsics.
-  for (int camID = 0; camID < RovioState<FILTER>::kNumCameras; camID++) {
+  for (int camID = 0; camID < RovioStateImpl<FILTER>::kNumCameras; camID++) {
     const Eigen::Vector3d &MrMC = state.MrMC[camID];
     const kindr::RotationQuaternionPD &qCM = state.qCM[camID];
 
@@ -714,7 +714,7 @@ void RovioRosNode<FILTER>::publishState(const RovioState<FILTER> &state) {
 
   // Publish Extrinsics
 
-  for (int camID = 0; camID < RovioState<FILTER>::kNumCameras; camID++) {
+  for (int camID = 0; camID < RovioStateImpl<FILTER>::kNumCameras; camID++) {
     const Eigen::Vector3d &MrMC = state.MrMC[camID];
     const kindr::RotationQuaternionPD &qCM = state.qCM[camID];
     const Eigen::MatrixXd &filterCovariance = state.filterCovariance;
@@ -806,7 +806,7 @@ void RovioRosNode<FILTER>::publishState(const RovioState<FILTER> &state) {
     FeatureDistance distance;
     double d, d_minus, d_plus;
     const double stretchFactor = 3;
-    for (unsigned int i = 0; i < RovioState<FILTER>::kMaxNumFeatures;
+    for (unsigned int i = 0; i < RovioStateImpl<FILTER>::kMaxNumFeatures;
          i++, offset += pclMsg_.point_step) {
       if (feature_state.isFeatureValid[i]) {
         const int camID = feature_state.featureObserverCamIDs[i];
@@ -899,51 +899,51 @@ void RovioRosNode<FILTER>::publishState(const RovioState<FILTER> &state) {
     patchMsg_.header.seq = msgSeq_;
     patchMsg_.header.stamp = rosTimeAfterUpdate;
     int offset = 0;
-    for (unsigned int i = 0; i < RovioState<FILTER>::kMaxNumFeatures;
+    for (unsigned int i = 0; i < RovioStateImpl<FILTER>::kMaxNumFeatures;
          i++, offset += patchMsg_.point_step) {
 
       if (patch_state.isFeatureValid[i]) {
         memcpy(&patchMsg_.data[offset + patchMsg_.fields[0].offset],
                &patch_state.patchIndices[i], sizeof(int)); // id
         // Add patch data
-        for (int l = 0; l < RovioState<FILTER>::kNumPatchLevels; l++) {
-          for (int y = 0; y < RovioState<FILTER>::kPatchSize; y++) {
-            for (int x = 0; x < RovioState<FILTER>::kPatchSize; x++) {
+        for (int l = 0; l < RovioStateImpl<FILTER>::kNumPatchLevels; l++) {
+          for (int y = 0; y < RovioStateImpl<FILTER>::kPatchSize; y++) {
+            for (int x = 0; x < RovioStateImpl<FILTER>::kPatchSize; x++) {
 
               // TODO(mfehr): there is this here: isPatchValid[i][l], not sure
               // if we should use this, the original code didn't either.
 
               memcpy(&patchMsg_.data[offset + patchMsg_.fields[1].offset +
-                                     (l * RovioState<FILTER>::kPatchArea +
-                                      y * RovioState<FILTER>::kPatchSize + x) *
+                                     (l * RovioStateImpl<FILTER>::kPatchArea +
+                                      y * RovioStateImpl<FILTER>::kPatchSize + x) *
                                          4],
                      &patch_state.patches[i][l]
-                          .patch_[y * RovioState<FILTER>::kPatchSize + x],
+                          .patch_[y * RovioStateImpl<FILTER>::kPatchSize + x],
                      sizeof(float)); // Patch
               memcpy(&patchMsg_.data[offset + patchMsg_.fields[2].offset +
-                                     (l * RovioState<FILTER>::kPatchArea +
-                                      y * RovioState<FILTER>::kPatchSize + x) *
+                                     (l * RovioStateImpl<FILTER>::kPatchArea +
+                                      y * RovioStateImpl<FILTER>::kPatchSize + x) *
                                          4],
                      &patch_state.patches[i][l]
-                          .dx_[y * RovioState<FILTER>::kPatchSize + x],
+                          .dx_[y * RovioStateImpl<FILTER>::kPatchSize + x],
                      sizeof(float)); // dx
               memcpy(&patchMsg_.data[offset + patchMsg_.fields[3].offset +
-                                     (l * RovioState<FILTER>::kPatchArea +
-                                      y * RovioState<FILTER>::kPatchSize + x) *
+                                     (l * RovioStateImpl<FILTER>::kPatchArea +
+                                      y * RovioStateImpl<FILTER>::kPatchSize + x) *
                                          4],
                      &patch_state.patches[i][l]
-                          .dy_[y * RovioState<FILTER>::kPatchSize + x],
+                          .dy_[y * RovioStateImpl<FILTER>::kPatchSize + x],
                      sizeof(float)); // dy
 
               // TODO(mfehr): Make sure this is correct, the patches above and
               // below are retreived via a different path, but should be the
               // same.
               memcpy(&patchMsg_.data[offset + patchMsg_.fields[4].offset +
-                                     (l * RovioState<FILTER>::kPatchArea +
-                                      y * RovioState<FILTER>::kPatchSize + x) *
+                                     (l * RovioStateImpl<FILTER>::kPatchArea +
+                                      y * RovioStateImpl<FILTER>::kPatchSize + x) *
                                          4],
                      &patch_state.patches[i][l]
-                          .patch_[y * RovioState<FILTER>::kPatchSize + x],
+                          .patch_[y * RovioStateImpl<FILTER>::kPatchSize + x],
                      sizeof(float)); // error
             }
           }
