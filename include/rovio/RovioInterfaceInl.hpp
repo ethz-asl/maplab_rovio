@@ -26,32 +26,16 @@
 *
 */
 
-#ifndef ROVIO_ROVIO_INTERFACE_INL_H_
-#define ROVIO_ROVIO_INTERFACE_INL_H_
+#ifndef ROVIO_ROVIO_INTERFACE_INL_HPP_
+#define ROVIO_ROVIO_INTERFACE_INL_HPP_
 
 #include "rovio/RovioInterface.h"
-
-#include "rovio/RovioNode.hpp"
 
 #include <functional>
 #include <memory>
 #include <queue>
 
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <glog/logging.h>
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/image_encodings.h>
-#include <std_srvs/Empty.h>
-#include <tf/transform_broadcaster.h>
-#include <visualization_msgs/Marker.h>
 
 #include "rovio/CoordinateTransform/FeatureOutput.hpp"
 #include "rovio/CoordinateTransform/FeatureOutputReadable.hpp"
@@ -59,8 +43,6 @@
 #include "rovio/CoordinateTransform/RovioOutput.hpp"
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "rovio/RovioInterface.h"
-#include "rovio/SrvResetToPose.h"
 
 namespace rovio {
 
@@ -76,6 +58,68 @@ RovioInterface<FILTER>::RovioInterface(
                                 (int)(FeatureOutputReadable::D_)) {
   mpImgUpdate_ = CHECK_NOTNULL(&std::get<0>(mpFilter_->mUpdates_));
   mpPoseUpdate_ = CHECK_NOTNULL(&std::get<1>(mpFilter_->mUpdates_));
+}
+
+template <typename FILTER>
+RovioInterface<FILTER>::RovioInterface(const std::string &filter_config_file)
+    : RovioInterface(std::make_shared<mtFilter>()) {
+  CHECK(mpFilter_);
+  CHECK(!filter_config_file.empty());
+
+  mpFilter_->readFromInfo(filter_config_file);
+  mpFilter_->refreshProperties();
+}
+
+template <typename FILTER>
+RovioInterface<FILTER>::RovioInterface(
+    const std::string &filter_config_file,
+    const std::string (
+        &camera_calibration_files)[RovioState<FILTER>::kNumCameras])
+    : RovioInterface(std::make_shared<mtFilter>()) {
+  CHECK(mpFilter_);
+  CHECK(!filter_config_file.empty());
+
+  // Load filter configuratino from file.
+  mpFilter_->readFromInfo(filter_config_file);
+
+  for (int camID = 0u; camID < RovioState<FILTER>::kNumCameras; ++camID) {
+    const std::string& camera_calibration_file = camera_calibration_files[camID];
+    if (!camera_calibration_file.empty()) {
+      mpFilter_->cameraCalibrationFile_[camID] = camera_calibration_file;
+    } else {
+      // Use the default camera calibration paths specified in the filter config
+      // file.
+      // TODO(mfehr): Do we need to check if either one of them was successful?
+    }
+  }
+
+  mpFilter_->refreshProperties();
+}
+
+template <typename FILTER>
+RovioInterface<FILTER>::RovioInterface(const FilterConfiguration &filter_config)
+    : RovioInterface(new mtFilter) {
+  CHECK(mpFilter_);
+
+  typedef boost::property_tree::ptree PropertyTree;
+
+  // Load filter configuration from property tree.
+  mpFilter_->readFromPropertyTree(static_cast<PropertyTree>(filter_config));
+
+  // Apply changes.
+  mpFilter_->refreshProperties();
+}
+
+template <typename FILTER>
+RovioInterface<FILTER>::RovioInterface(
+    const FilterConfiguration &filter_config,
+    const CameraCalibration (
+        &camera_calibrations)[RovioState<FILTER>::kNumCameras])
+    : RovioInterface(filter_config) {
+  CHECK(mpFilter_);
+
+  // Override camera calibrations.
+  mpFilter_->setCameraCalibrations(camera_calibrations);
 }
 
 template <typename FILTER>
@@ -640,4 +684,4 @@ template <typename FILTER> void RovioInterface<FILTER>::makeTest() {
 
 } // namespace rovio
 
-#endif // ROVIO_ROVIO_INTERFACE_INL_H_
+#endif // ROVIO_ROVIO_INTERFACE_INL_HPP_

@@ -90,26 +90,24 @@ int main(int argc, char** argv){
 
   nh_private.param("filter_config", filter_config, filter_config);
 
-  // Filter
-  std::shared_ptr<mtFilter> mpFilter(new mtFilter);
-  mpFilter->readFromInfo(filter_config);
+  std::string camera_calibration_files[nCam_];
 
   // Force the camera calibration paths to the ones from ROS parameters.
   for (unsigned int camID = 0; camID < nCam_; ++camID) {
     std::string camera_config;
     if (nh_private.getParam("camera" + std::to_string(camID)
                             + "_config", camera_config)) {
-      mpFilter->cameraCalibrationFile_[camID] = camera_config;
+      camera_calibration_files[camID] = camera_config;
     }
   }
-  mpFilter->refreshProperties();
 
-  // Node
-  rovio::RovioNode<mtFilter> rovioNode(nh, nh_private, mpFilter);
-  rovio::RovioInterface<mtFilter> &rovioInterface =
-      rovioNode.getRovioInterface();
+  // Set up ROVIO by using the RovioInterface.
+  rovio::RovioInterface<mtFilter> rovioInterface(filter_config, camera_calibration_files);
+  rovioInterface.makeTest();
 
-  rovioNode.makeTest();
+  // Create the ROVIO ROS node and connect it to the interface.
+  rovio::RovioNode<mtFilter> rovioNode(nh, nh_private, &rovioInterface);
+
   double resetTrigger = 0.0;
   nh_private.param("record_odometry", rovioNode.forceOdometryPublishing_, rovioNode.forceOdometryPublishing_);
   nh_private.param("record_pose_with_covariance_stamped", rovioNode.forcePoseWithCovariancePublishing_, rovioNode.forcePoseWithCovariancePublishing_);

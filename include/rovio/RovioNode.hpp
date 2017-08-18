@@ -49,11 +49,6 @@
 #include <tf/transform_broadcaster.h>
 #include <visualization_msgs/Marker.h>
 
-#include "rovio/CoordinateTransform/FeatureOutput.hpp"
-#include "rovio/CoordinateTransform/FeatureOutputReadable.hpp"
-#include "rovio/CoordinateTransform/LandmarkOutput.hpp"
-#include "rovio/CoordinateTransform/RovioOutput.hpp"
-#include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
 #include "rovio/RovioInterface.h"
 #include "rovio/RovioInterfaceStates.h"
@@ -69,7 +64,7 @@ template <typename FILTER> class RovioNode {
 public:
   typedef FILTER mtFilter;
 
-  RovioInterface<mtFilter> rovio_interface_;
+  RovioInterface<mtFilter>* rovio_interface_;
 
   bool forceOdometryPublishing_;
   bool forcePoseWithCovariancePublishing_;
@@ -128,13 +123,7 @@ public:
   /** \brief Constructor
    */
   RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
-            std::shared_ptr<mtFilter> mpFilter);
-
-  /** \brief Tests the functionality of the rovio node.
-   *
-   *  @todo debug with   doVECalibration = false and depthType = 0
-   */
-  inline void makeTest() { rovio_interface_.makeTest(); }
+            RovioInterface<FILTER>* rovio_interface);
 
   /** \brief Callback for IMU-Messages. Adds IMU measurements (as prediction
    * measurements) to the filter.
@@ -184,11 +173,13 @@ public:
   /** \brief Get const access to the underlying rovio interface
   */
   inline RovioInterface<FILTER> &getRovioInterface() {
-    return rovio_interface_;
+    CHECK(rovio_interface_ != nullptr);
+    return *rovio_interface_;
   }
 
   inline const RovioInterface<FILTER> &getRovioInterface() const {
-    return rovio_interface_;
+    CHECK(rovio_interface_ != nullptr);
+    return *rovio_interface_;
   }
 
   /** \brief Executes the update step of the filter and publishes the updated
@@ -205,8 +196,8 @@ public:
 
 template <typename FILTER>
 RovioNode<FILTER>::RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
-                             std::shared_ptr<mtFilter> mpFilter)
-    : rovio_interface_(mpFilter), nh_(nh), nh_private_(nh_private) {
+                             RovioInterface<FILTER>* rovio_interface)
+    : rovio_interface_(rovio_interface), nh_(nh), nh_private_(nh_private) {
 
 #ifndef NDEBUG
   ROS_WARN("====================== Debug Mode ======================");
@@ -381,7 +372,7 @@ RovioNode<FILTER>::RovioNode(ros::NodeHandle &nh, ros::NodeHandle &nh_private,
   // Register state update callback.
   typename RovioInterface<FILTER>::RovioStateCallback callback = std::bind(
       &RovioNode<FILTER>::publishStateCallback, std::placeholders::_1, this);
-  rovio_interface_.registerStateUpdateCallback(callback);
+  rovio_interface_->registerStateUpdateCallback(callback);
 }
 
 template <typename FILTER>
@@ -393,7 +384,7 @@ void RovioNode<FILTER>::imuCallback(const sensor_msgs::Imu::ConstPtr &imu_msg) {
                       imu_msg->angular_velocity.z);
   const double time_s = imu_msg->header.stamp.toSec();
 
-  rovio_interface_.processImuUpdate(acc, gyr, time_s);
+  rovio_interface_->processImuUpdate(acc, gyr, time_s);
 }
 
 template <typename FILTER>
@@ -436,7 +427,7 @@ void RovioNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
 
   const double time_s = img->header.stamp.toSec();
 
-  rovio_interface_.processImageUpdate(camID, cv_img, time_s);
+  rovio_interface_->processImageUpdate(camID, cv_img, time_s);
 }
 
 template <typename FILTER>
@@ -450,7 +441,7 @@ void RovioNode<FILTER>::groundtruthCallback(
           transform->transform.rotation.y, transform->transform.rotation.z);
   const double time_s = transform->header.stamp.toSec();
 
-  rovio_interface_.processGroundTruthUpdate(JrJV, qJV, time_s);
+  rovio_interface_->processGroundTruthUpdate(JrJV, qJV, time_s);
 }
 
 template <typename FILTER>
@@ -470,7 +461,7 @@ void RovioNode<FILTER>::groundtruthOdometryCallback(
 
   const double time_s = odometry->header.stamp.toSec();
 
-  rovio_interface_.processGroundTruthOdometryUpdate(JrJV, qJV, measuredCov,
+  rovio_interface_->processGroundTruthOdometryUpdate(JrJV, qJV, measuredCov,
                                                     time_s);
 }
 
@@ -481,14 +472,14 @@ void RovioNode<FILTER>::velocityCallback(
                       velocity->twist.linear.z);
   const double time_s = velocity->header.stamp.toSec();
 
-  rovio_interface_.processVelocityUpdate(AvM, time_s);
+  rovio_interface_->processVelocityUpdate(AvM, time_s);
 }
 
 template <typename FILTER>
 bool RovioNode<FILTER>::resetServiceCallback(
     std_srvs::Empty::Request & /*request*/,
     std_srvs::Empty::Response & /*response*/) {
-  rovio_interface_.requestReset();
+  rovio_interface_->requestReset();
   return true;
 }
 
@@ -501,7 +492,7 @@ bool RovioNode<FILTER>::resetToPoseServiceCallback(
   QPD qWM(request.T_WM.orientation.w, request.T_WM.orientation.x,
           request.T_WM.orientation.y, request.T_WM.orientation.z);
 
-  rovio_interface_.requestResetToPose(WrWM, qWM.inverted());
+  rovio_interface_->requestResetToPose(WrWM, qWM.inverted());
 
   return true;
 }
@@ -515,10 +506,10 @@ void RovioNode<FILTER>::publishState(const RovioState<FILTER> &state) {
   const bool publishFeatureState =
       pubPcl_.getNumSubscribers() > 0 || pubMarkers_.getNumSubscribers() > 0 ||
       forcePclPublishing_ || forceMarkersPublishing_;
-  rovio_interface_.setEnableFeatureUpdateOutput(publishFeatureState);
+  rovio_interface_->setEnableFeatureUpdateOutput(publishFeatureState);
   const bool publishPatchState =
       pubPatch_.getNumSubscribers() > 0 || forcePatchPublishing_;
-  rovio_interface_.setEnablePatchUpdateOutput(publishPatchState);
+  rovio_interface_->setEnablePatchUpdateOutput(publishPatchState);
 
   if (!state.isInitialized) {
     return;

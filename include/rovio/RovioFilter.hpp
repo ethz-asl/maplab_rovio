@@ -59,6 +59,7 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
   using Base::safe_;
   using Base::front_;
   using Base::readFromInfo;
+  using Base::readFromPropertyTree;
   using Base::boolRegister_;
   using Base::intRegister_;
   using Base::doubleRegister_;
@@ -189,6 +190,15 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
       init_.state_.dep(i).setType(depthTypeInt_);
     }
   };
+
+  /** \brief Sets the camera calibration for all cameras.
+   */
+  void setCameraCalibrations(
+      const CameraCalibration (&camera_calibrations)[mtState::nCam_]) {
+    for (int camID = 0; camID < mtState::nCam_; camID++) {
+      multiCamera_.cameras_[camID].init(camera_calibrations[camID]);
+    }
+  }
 
   /** \brief Destructor
    */

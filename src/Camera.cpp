@@ -1,3 +1,6 @@
+
+#include <glog/logging.h>
+
 #include "rovio/Camera.hpp"
 #include "yaml-cpp/yaml.h"
 
@@ -7,7 +10,7 @@ namespace rovio{
     k1_ = 0.0; k2_ = 0.0; k3_ = 0.0; k4_ = 0.0; k5_ = 0.0; k6_ = 0.0;
     p1_ = 0.0; p2_ = 0.0; s1_ = 0.0; s2_ = 0.0; s3_ = 0.0; s4_ = 0.0;
     K_.setIdentity();
-    type_ = RADTAN;
+    type_ = DistortionModel::RADTAN;
   };
 
   Camera::~Camera(){};
@@ -52,14 +55,52 @@ namespace rovio{
     std::string distortionModel;
     distortionModel = config["distortion_model"].as<std::string>();
     if(distortionModel == "plumb_bob"){
-      type_ = RADTAN;
+      type_ = DistortionModel::RADTAN;
       loadRadtan(filename);
     } else if(distortionModel == "equidistant"){
-      type_ = EQUIDIST;
+      type_ = DistortionModel::EQUIDIST;
       loadEquidist(filename);
     } else {
-      std::cout << "ERROR: no camera Model detected!";
+      std::cout << "ERROR: no camera Model detected!" << std::endl;
     }
+  }
+
+  bool Camera::init(const CameraCalibration &calibration) {
+    // Set distortion model.
+    type_ = calibration.distortionModel_;
+
+    switch (type_) {
+    case DistortionModel::RADTAN:
+      CHECK_EQ(calibration.parameters_.size(),
+               NUM_DISTORTION_PARAMS[static_cast<int>(type_)]);
+
+      k1_ = calibration.parameters_[0];
+      k2_ = calibration.parameters_[1];
+      p1_ = calibration.parameters_[2];
+      p2_ = calibration.parameters_[3];
+      k3_ = calibration.parameters_[4];
+      std::cout << "Set distortion parameters (Radtan) to: k1(" << k1_
+                << "), k2(" << k2_ << "), k3(" << k3_ << "), p1(" << p1_
+                << "), p2(" << p2_ << ")" << std::endl;
+      break;
+    case DistortionModel::EQUIDIST:
+      CHECK_EQ(calibration.parameters_.size(),
+               NUM_DISTORTION_PARAMS[static_cast<int>(type_)]);
+
+      k1_ = calibration.parameters_[0];
+      k2_ = calibration.parameters_[1];
+      k3_ = calibration.parameters_[2];
+      k4_ = calibration.parameters_[3];
+      std::cout << "Set distortion parameters (Equidist) to: k1(" << k1_
+                << "), k2(" << k2_ << "), k3(" << k3_ << "), k4(" << k4_ << ")"
+                << std::endl;
+      break;
+    default:
+      std::cout << "ERROR: unknown camera Model detected! (model: "
+                << static_cast<int>(type_) << ")" << std::endl;
+      return false;
+    }
+    return true;
   }
 
   void Camera::distortRadtan(const Eigen::Vector2d& in, Eigen::Vector2d& out) const{
@@ -146,10 +187,10 @@ namespace rovio{
 
   void Camera::distort(const Eigen::Vector2d& in, Eigen::Vector2d& out) const{
     switch(type_){
-      case RADTAN:
+      case DistortionModel::RADTAN:
         distortRadtan(in,out);
         break;
-      case EQUIDIST:
+      case DistortionModel::EQUIDIST:
         distortEquidist(in,out);
         break;
       default:
@@ -160,10 +201,10 @@ namespace rovio{
 
   void Camera::distort(const Eigen::Vector2d& in, Eigen::Vector2d& out, Eigen::Matrix2d& J) const{
     switch(type_){
-      case RADTAN:
+      case DistortionModel::RADTAN:
         distortRadtan(in,out,J);
         break;
-      case EQUIDIST:
+      case DistortionModel::EQUIDIST:
         distortEquidist(in,out,J);
         break;
       default:

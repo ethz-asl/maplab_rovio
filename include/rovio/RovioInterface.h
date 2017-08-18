@@ -34,21 +34,7 @@
 #include <mutex>
 #include <queue>
 
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <glog/logging.h>
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/image_encodings.h>
-#include <std_srvs/Empty.h>
-#include <tf/transform_broadcaster.h>
-#include <visualization_msgs/Marker.h>
 
 #include "rovio/CoordinateTransform/FeatureOutput.hpp"
 #include "rovio/CoordinateTransform/FeatureOutputReadable.hpp"
@@ -57,7 +43,8 @@
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/RovioFilter.hpp"
 #include "rovio/RovioInterfaceStates.h"
-#include "rovio/SrvResetToPose.h"
+#include "rovio/CameraCalibration.hpp"
+#include "rovio/FilterConfiguration.hpp"
 
 namespace rovio {
 
@@ -66,6 +53,17 @@ struct FilterInitializationState;
 template <typename FILTER> class RovioInterface {
 public:
   RovioInterface(typename std::shared_ptr<FILTER> mpFilter);
+
+  RovioInterface(const std::string &filter_config_file);
+  RovioInterface(
+      const std::string &filter_config_file,
+      const std::string (
+          &camera_calibration_files)[RovioState<FILTER>::kNumCameras]);
+
+  RovioInterface(const FilterConfiguration &filter_config);
+  RovioInterface(const FilterConfiguration &filter_config,
+                 const CameraCalibration (
+                     &camera_calibrations)[RovioState<FILTER>::kNumCameras]);
 
   typedef FILTER mtFilter;
   typedef typename mtFilter::mtFilterState mtFilterState;

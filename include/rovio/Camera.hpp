@@ -29,22 +29,22 @@
 #ifndef ROVIO_CAMERA_HPP_
 #define ROVIO_CAMERA_HPP_
 
-#include "lightweight_filtering/common.hpp"
 #include <opencv2/features2d/features2d.hpp>
+
 #include "lightweight_filtering/State.hpp"
+#include "lightweight_filtering/common.hpp"
+#include "rovio/CameraCalibration.hpp"
 
 namespace rovio{
 
 class Camera{
  public:
-  /** \brief Distortion model of the camera.
-   * */
-  enum ModelType{
-    RADTAN,    //!< Radial tangential distortion model.
-    EQUIDIST   //!< Equidistant distortion model.
-  } type_;
 
   Eigen::Matrix3d K_; //!< Intrinsic parameter matrix.
+
+  /** \brief Distortion model of the camera.
+   * */
+  DistortionModel type_;
 
   //@{
   /** \brief Distortion Parameter. */
@@ -86,6 +86,12 @@ class Camera{
    *   @param filename - Path to the yaml-file, containing the distortion model and distortion coefficient data.
    */
   void load(const std::string& filename);
+
+  /** \brief Initialize camera model from CameraCalibration struct.
+   *
+   *   @param calibration - Camera calibration struct.
+   */
+  bool init(const CameraCalibration& calibration);
 
   /** \brief Distorts a point on the unit plane (in camera coordinates) according to the Radtan distortion model.
    *
