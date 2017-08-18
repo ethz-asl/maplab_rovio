@@ -102,11 +102,11 @@ int main(int argc, char** argv){
   }
 
   // Set up ROVIO by using the RovioInterface.
-  rovio::RovioInterfaceImpl<mtFilter> rovioInterface(filter_config, camera_calibration_files);
-  rovioInterface.makeTest();
+  std::unique_ptr<rovio::RovioInterface> rovioInterface(new rovio::RovioInterfaceImpl<mtFilter>(filter_config, camera_calibration_files));
+  rovioInterface->makeTest();
 
   // Create the ROVIO ROS node and connect it to the interface.
-  rovio::RovioRosNode<mtFilter> rovioNode(nh, nh_private, &rovioInterface);
+  rovio::RovioRosNode<mtFilter> rovioNode(nh, nh_private, rovioInterface.get());
 
   double resetTrigger = 0.0;
   nh_private.param("record_odometry", rovioNode.forceOdometryPublishing_, rovioNode.forceOdometryPublishing_);
@@ -203,8 +203,8 @@ int main(int argc, char** argv){
 
     // TODO(mfehr): this could probably be done using the new state change callback.
     if(rovioNode.gotFirstMessages_){
-      static double lastSafeTime = rovioInterface.getLastSafeTime();
-      if(rovioInterface.getLastSafeTime() > lastSafeTime){
+      static double lastSafeTime = rovioInterface->getLastSafeTime();
+      if(rovioInterface->getLastSafeTime() > lastSafeTime){
         if(rovioNode.forceOdometryPublishing_) bagOut.write(odometry_topic_name,ros::Time::now(),rovioNode.odometryMsg_);
         if(rovioNode.forceTransformPublishing_) bagOut.write(transform_topic_name,ros::Time::now(),rovioNode.transformMsg_);
         for(int camID=0;camID<mtFilter::mtState::nCam_;camID++){
@@ -214,14 +214,14 @@ int main(int argc, char** argv){
         if(rovioNode.forcePclPublishing_) bagOut.write(pcl_topic_name,ros::Time::now(),rovioNode.pclMsg_);
         if(rovioNode.forceMarkersPublishing_) bagOut.write(u_rays_topic_name,ros::Time::now(),rovioNode.markerMsg_);
         if(rovioNode.forcePatchPublishing_) bagOut.write(patch_topic_name,ros::Time::now(),rovioNode.patchMsg_);
-        lastSafeTime = rovioInterface.getLastSafeTime();
+        lastSafeTime = rovioInterface->getLastSafeTime();
       }
       if(!isTriggerInitialized){
         lastTriggerTime = lastSafeTime;
         isTriggerInitialized = true;
       }
       if(resetTrigger>0.0 && lastSafeTime - lastTriggerTime > resetTrigger){
-        rovioInterface.resetToLastSafePose();
+        rovioInterface->resetToLastSafePose();
         lastTriggerTime = lastSafeTime;
       }
     }
