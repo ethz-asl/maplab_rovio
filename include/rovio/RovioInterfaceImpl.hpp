@@ -44,7 +44,7 @@
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/FilterConfiguration.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "RovioInterfaceStates.hpp"
+#include "RovioInterfaceStatesImpl.hpp"
 
 #include "rovio/RovioInterface.hpp"
 

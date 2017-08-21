@@ -33,46 +33,40 @@
 
 namespace rovio {
 
-template <typename FILTER> struct RovioPatchState {
-  static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
-  static constexpr int kNumPatchLevels =
-      FILTER::mtFilterState::mtState::nLevels_;
-  static constexpr int kPatchSize = FILTER::mtFilterState::mtState::patchSize_;
+struct RovioPatchState {
+  virtual bool get_isFeatureValid(const int feature_idx) const = 0;
+  virtual int get_PatchIndex(const int feature_idx) const = 0;
+  virtual bool get_isPatchValid(const int feature_idx,
+                                const int patch_level) const = 0;
 
-  bool isFeatureValid[kMaxNumFeatures];
-  int patchIndices[kMaxNumFeatures];
-  bool isPatchValid[kMaxNumFeatures][kNumPatchLevels];
-  Patch<kPatchSize> patches[kMaxNumFeatures][kNumPatchLevels];
+  virtual float get_PatchPixel(const int feature_idx, const int patch_level,
+                               const int linear_idx) const = 0;
+  virtual float get_PatchDx(const int feature_idx, const int patch_level,
+                            const int linear_idx) const = 0;
+  virtual float get_PatchDy(const int feature_idx, const int patch_level,
+                            const int linear_idx) const = 0;
 };
 
-template <typename FILTER> struct RovioFeatureState {
+struct RovioFeatureState {
+  virtual bool get_isFeatureValid(const size_t feature_idx) const = 0;
 
-  static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
+  virtual int get_FeatureObservrCamID(const size_t feature_idx) const = 0;
+  virtual int get_FeatureIndex(const size_t feature_idx) const = 0;
 
-  // Since we use a fixed number of features, the (in)valid ones are determined with this array.
-  bool isFeatureValid[kMaxNumFeatures];
+  virtual const Eigen::Vector3d &get_CrCPm(const size_t feature_idx) const = 0;
+  virtual const Eigen::Vector3d &get_CrCPp(const size_t feature_idx) const = 0;
 
-  int featureObserverCamIDs[kMaxNumFeatures];
-  int featureIndices[kMaxNumFeatures];
+  virtual const Eigen::Vector3f &
+  get_bearings(const size_t feature_idx) const = 0;
 
-  // Start and end points of the feature uncertainty visualization (a line along
-  // the bearing vector centered around the current estimate of the feature).
-  Eigen::Vector3d CrCPm_vec[kMaxNumFeatures];
-  Eigen::Vector3d CrCPp_vec[kMaxNumFeatures];
+  virtual const Eigen::Vector3f &get_MrMP(const size_t feature_idx) const = 0;
+  virtual const Eigen::Matrix3f &
+  get_cov_MrMP(const size_t feature_idx) const = 0;
 
-  // Feature bearing vector.
-  Eigen::Vector3f bearings[kMaxNumFeatures];
+  virtual float get_Distance(const size_t feature_idx) const = 0;
+  virtual float get_DistanceCov(const size_t feature_idx) const = 0;
 
-  // Feature position and covariance.
-  Eigen::Vector3f MrMP_vec[kMaxNumFeatures];
-  Eigen::Matrix3f cov_MrMP_vec[kMaxNumFeatures];
-
-  // Feature distance along the bearing vector with covariance.
-  float distances[kMaxNumFeatures];
-  float distances_cov[kMaxNumFeatures];
-
-  // Feature status.
-  uint32_t status_vec[kMaxNumFeatures];
+  virtual uint32_t get_Status(const size_t feature_idx) const = 0;
 };
 
 struct RovioState {
@@ -80,138 +74,40 @@ struct RovioState {
 
   virtual double getTimeAfterUpdate() const = 0;
 
-  virtual const Eigen::MatrixXd& getFilterCovariance() const = 0;
+  virtual const Eigen::MatrixXd &getFilterCovariance() const = 0;
 
-  virtual const kindr::RotationQuaternionPD& get_qCM(size_t camera_index) const = 0;
-  virtual const Eigen::Vector3d& get_MrMC(size_t camera_index) const = 0;
+  virtual const Eigen::Vector3d &get_MrMC(size_t camera_index) const = 0;
+  virtual const kindr::RotationQuaternionPD &
+  get_qCM(size_t camera_index) const = 0;
 
-  virtual const Eigen::Vector3d& get_WrWB() const = 0;
-  virtual const kindr::RotationQuaternionPD& get_qBW() const = 0;
+  virtual const Eigen::Vector3d &get_WrWB() const = 0;
+  virtual const kindr::RotationQuaternionPD &get_qBW() const = 0;
 
-  virtual const Eigen::Vector3d& get_BvB() const = 0;
-  virtual const Eigen::Vector3d& get_BwWB() const = 0;
+  virtual const Eigen::Vector3d &get_BvB() const = 0;
+  virtual const Eigen::Vector3d &get_BwWB() const = 0;
 
-  virtual const Eigen::MatrixXd& getImuCovariance() const = 0;
+  virtual const Eigen::MatrixXd &getImuCovariance() const = 0;
 
-  virtual const Eigen::Vector3d& getGyb() const = 0;
-  virtual const Eigen::Vector3d& getAcb() const = 0;
+  virtual const Eigen::Vector3d &getGyb() const = 0;
+  virtual const Eigen::Vector3d &getAcb() const = 0;
 
   virtual bool getHasInertialPose() const = 0;
-  virtual const Eigen::Vector3d& get_IrIW() const = 0;
-  virtual const kindr::RotationQuaternionPD& get_qWI() const = 0;
-};
+  virtual const Eigen::Vector3d &get_IrIW() const = 0;
+  virtual const kindr::RotationQuaternionPD &get_qWI() const = 0;
 
-template <typename FILTER>
-struct RovioStateImpl : public RovioState {
-  static constexpr int kNumCameras = FILTER::mtFilterState::mtState::nCam_;
-  static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
-  static constexpr int kPatchSize = FILTER::mtFilterState::mtState::patchSize_;
-  static constexpr int kNumPatchLevels =
-      FILTER::mtFilterState::mtState::nLevels_;
-  static constexpr int kNumPoses = FILTER::mtFilterState::mtState::nPose_;
-  static constexpr int kPatchArea = kPatchSize * kPatchSize;
-  static constexpr int kPatchAreaTimesLevels = kPatchArea * kNumPatchLevels;
+  virtual bool hasFeatureState() const = 0;
+  virtual const RovioFeatureState &getFeatureState() const = 0;
 
-  bool getIsInitialized() const {
-    return isInitialized;
-  }
-  double getTimeAfterUpdate() const {
-    return timeAfterUpdate;
-  }
-  const Eigen::MatrixXd& getFilterCovariance() const {
-    return filterCovariance;
-  }
-  const kindr::RotationQuaternionPD& get_qCM(size_t camera_index) const {
-    CHECK_LT(camera_index, kNumCameras);
-    return qCM[camera_index];
-  }
-  const Eigen::Vector3d& get_MrMC(size_t camera_index) const {
-    CHECK_LT(camera_index, kNumCameras);
-    return MrMC[camera_index];
-  }
-  const Eigen::Vector3d& get_WrWB() const {
-    return WrWB;
-  }
-  const kindr::RotationQuaternionPD& get_qBW() const {
-    return qBW;
-  }
-  const Eigen::Vector3d& get_BvB() const {
-    return BvB;
-  }
-  const Eigen::Vector3d& get_BwWB() const {
-    return BwWB;
-  }
-  const Eigen::MatrixXd& getImuCovariance() const {
-    return imuCovariance;
-  }
-  const Eigen::Vector3d& getGyb() const {
-    return gyb;
-  }
-  const Eigen::Vector3d& getAcb() const {
-    return acb;
-  }
-  bool getHasInertialPose() const {
-    return hasInertialPose;
-  }
-  const Eigen::Vector3d& get_IrIW() const {
-    return IrIW;
-  }
-  const kindr::RotationQuaternionPD& get_qWI() const {
-    return qWI;
-  }
-
-  // If the filter isn't initialized, the state variables do not contain any
-  // meaningful data.
-  bool isInitialized = false;
-
-  // Time stamp of this state.
-  double timeAfterUpdate;
-
-  // Overall filter state covariance.
-  Eigen::MatrixXd filterCovariance;
-
-  // Camera extrinsics:
-  // Transformation between IMU frame (M) and camera frame (C).
-  kindr::RotationQuaternionPD qCM[kNumCameras];
-  Eigen::Vector3d MrMC[kNumCameras];
-
-  // IMU frame:
-  // Transformation between world frame (W) and the IMU frame (B).
-  Eigen::Vector3d WrWB;
-  kindr::RotationQuaternionPD qBW;
-  // Velocities of IMU frame (B).
-  Eigen::Vector3d BvB;
-  Eigen::Vector3d BwWB;
-  // IMU frame covariance
-  Eigen::MatrixXd imuCovariance;
-  // IMU biases.
-  Eigen::Vector3d gyb;
-  Eigen::Vector3d acb;
-
-  // TODO(mfehr): We should try to get rid of those...
-  // These objects contain configuration variables that are needed to determine
-  // if a certain topic should be published or not.
-  typedef typename std::tuple_element<0, typename FILTER::mtUpdates>::type
-      mtImgUpdate;
-  mtImgUpdate *mpImgUpdate;
-  typedef typename std::tuple_element<1, typename FILTER::mtUpdates>::type
-      mtPoseUpdate;
-  mtPoseUpdate *mpPoseUpdate;
-
-  // Optional: Localization transform:
-  // Transformation between world frame (= global base frame) and inertial frame
-  // (= mission/odometry base frame).
-  bool hasInertialPose = false;
-  Eigen::Vector3d IrIW;
-  kindr::RotationQuaternionPD qWI;
+  virtual bool hasPatchState() const = 0;
+  virtual const RovioPatchState &getPatchState() const = 0;
 
   // Optional: Feature state.
   bool hasFeatureUpdate = false;
-  std::unique_ptr<RovioFeatureState<FILTER>> feature_state;
+  std::unique_ptr<RovioFeatureState> feature_state;
 
   // Optional: Path state.
   bool hasPatchUpdate = false;
-  std::unique_ptr<RovioPatchState<FILTER>> patch_state;
+  std::unique_ptr<RovioPatchState> patch_state;
 };
 
 } // namespace rovio

@@ -30,7 +30,7 @@
 #define ROVIO_ROVIOINTERFACE_HPP_
 
 #include <Eigen/Core>
-#include <rovio/RovioInterfaceStates.hpp>
+#include <rovio/RovioInterfaceStatesImpl.hpp>
 
 namespace rovio {
 

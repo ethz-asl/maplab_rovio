@@ -26,8 +26,10 @@
 *
 */
 
-#ifndef ROVIO_ROVIO_INTERFACE_IMPL_INL_HPP_
-#define ROVIO_ROVIO_INTERFACE_IMPL_INL_HPP_
+#ifndef ROVIO_ROVIO_INTERFACE_INL_HPP_
+#define ROVIO_ROVIO_INTERFACE_INL_HPP_
+
+#include "rovio/RovioInterface.hpp"
 
 #include <functional>
 #include <memory>
@@ -45,7 +47,7 @@
 namespace rovio {
 
 template <typename FILTER>
-RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
+RovioInterface<FILTER>::RovioInterface(
     typename std::shared_ptr<mtFilter> mpFilter)
     : mpFilter_(mpFilter), transformFeatureOutputCT_(&mpFilter->multiCamera_),
       landmarkOutputImuCT_(&mpFilter->multiCamera_),
@@ -59,9 +61,8 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 }
 
 template <typename FILTER>
-RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
-    const std::string &filter_config_file)
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+RovioInterface<FILTER>::RovioInterface(const std::string &filter_config_file)
+    : RovioInterface(std::make_shared<mtFilter>()) {
   CHECK(mpFilter_);
   CHECK(!filter_config_file.empty());
 
@@ -70,20 +71,19 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 }
 
 template <typename FILTER>
-RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
+RovioInterface<FILTER>::RovioInterface(
     const std::string &filter_config_file,
     const std::string (
-        &camera_calibration_files)[RovioStateImpl<FILTER>::kNumCameras])
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+        &camera_calibration_files)[RovioState<FILTER>::kNumCameras])
+    : RovioInterface(std::make_shared<mtFilter>()) {
   CHECK(mpFilter_);
   CHECK(!filter_config_file.empty());
 
   // Load filter configuratino from file.
   mpFilter_->readFromInfo(filter_config_file);
 
-  for (int camID = 0u; camID < RovioStateImpl<FILTER>::kNumCameras; ++camID) {
-    const std::string &camera_calibration_file =
-        camera_calibration_files[camID];
+  for (int camID = 0u; camID < RovioState<FILTER>::kNumCameras; ++camID) {
+    const std::string& camera_calibration_file = camera_calibration_files[camID];
     if (!camera_calibration_file.empty()) {
       mpFilter_->cameraCalibrationFile_[camID] = camera_calibration_file;
     } else {
@@ -97,9 +97,8 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 }
 
 template <typename FILTER>
-RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
-    const FilterConfiguration &filter_config)
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+RovioInterface<FILTER>::RovioInterface(const FilterConfiguration &filter_config)
+    : RovioInterface(std::make_shared<mtFilter>()) {
   CHECK(mpFilter_);
 
   typedef boost::property_tree::ptree PropertyTree;
@@ -112,11 +111,11 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 }
 
 template <typename FILTER>
-RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
+RovioInterface<FILTER>::RovioInterface(
     const FilterConfiguration &filter_config,
     const CameraCalibration (
-        &camera_calibrations)[RovioStateImpl<FILTER>::kNumCameras])
-    : RovioInterfaceImpl(filter_config) {
+        &camera_calibrations)[RovioState<FILTER>::kNumCameras])
+    : RovioInterface(filter_config) {
   CHECK(mpFilter_);
 
   // Override camera calibrations.
@@ -124,19 +123,19 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 }
 
 template <typename FILTER>
-void RovioInterfaceImpl<FILTER>::setEnableFeatureUpdateOutput(
+void RovioInterface<FILTER>::setEnableFeatureUpdateOutput(
     const bool enable_feature_update_output) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   enable_feature_update_output_ = enable_feature_update_output;
 }
 template <typename FILTER>
-void RovioInterfaceImpl<FILTER>::setEnablePatchUpdateOutput(
+void RovioInterface<FILTER>::setEnablePatchUpdateOutput(
     const bool enable_patch_update_output) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   enable_patch_update_output_ = enable_patch_update_output;
 }
 
-template <typename FILTER> void RovioInterfaceImpl<FILTER>::requestReset() {
+template <typename FILTER> void RovioInterface<FILTER>::requestReset() {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   if (!init_state_.isInitialized()) {
@@ -148,8 +147,8 @@ template <typename FILTER> void RovioInterfaceImpl<FILTER>::requestReset() {
 }
 
 template <typename FILTER>
-void RovioInterfaceImpl<FILTER>::requestResetToPose(const V3D &WrWM,
-                                                    const QPD &qMW) {
+void RovioInterface<FILTER>::requestResetToPose(const V3D &WrWM,
+                                                const QPD &qMW) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   if (!init_state_.isInitialized()) {
@@ -163,8 +162,7 @@ void RovioInterfaceImpl<FILTER>::requestResetToPose(const V3D &WrWM,
       FilterInitializationState::State::WaitForInitExternalPose;
 }
 
-template <typename FILTER>
-void RovioInterfaceImpl<FILTER>::resetToLastSafePose() {
+template <typename FILTER> void RovioInterface<FILTER>::resetToLastSafePose() {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   requestReset();
@@ -172,15 +170,14 @@ void RovioInterfaceImpl<FILTER>::resetToLastSafePose() {
   mpFilter_->init_.state_.qWM() = mpFilter_->safe_.state_.qWM();
 }
 
-template <typename FILTER>
-double RovioInterfaceImpl<FILTER>::getLastSafeTime() {
+template <typename FILTER> double RovioInterface<FILTER>::getLastSafeTime() {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   return mpFilter_->safe_.t_;
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::processVelocityUpdate(
-    const Eigen::Vector3d &AvM, const double time_s) {
+bool RovioInterface<FILTER>::processVelocityUpdate(const Eigen::Vector3d &AvM,
+                                                   const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   if (init_state_.isInitialized()) {
@@ -196,9 +193,9 @@ bool RovioInterfaceImpl<FILTER>::processVelocityUpdate(
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::processImuUpdate(const Eigen::Vector3d &acc,
-                                                  const Eigen::Vector3d &gyr,
-                                                  const double time_s) {
+bool RovioInterface<FILTER>::processImuUpdate(const Eigen::Vector3d &acc,
+                                              const Eigen::Vector3d &gyr,
+                                              const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   predictionMeas_.template get<mtPredictionMeas::_acc>() = acc;
@@ -238,18 +235,17 @@ bool RovioInterfaceImpl<FILTER>::processImuUpdate(const Eigen::Vector3d &acc,
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
-                                                    const cv::Mat &cv_img,
-                                                    const double time_s) {
+bool RovioInterface<FILTER>::processImageUpdate(const int camID,
+                                                const cv::Mat &cv_img,
+                                                const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
-  CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras)
-      << "Invalid camID " << camID;
+  CHECK_LT(camID, RovioState<FILTER>::kNumCameras) << "Invalid camID " << camID;
 
   if (init_state_.isInitialized() && !cv_img.empty()) {
     double msgTime = time_s;
     if (msgTime != imgUpdateMeas_.template get<mtImgMeas::_aux>().imgTime_) {
-      for (int i = 0; i < RovioStateImpl<FILTER>::kNumCameras; i++) {
+      for (int i = 0; i < RovioState<FILTER>::kNumCameras; i++) {
         if (imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[i]) {
           std::cout
               << "    \033[31mFailed Synchronization of Camera Frames, t = "
@@ -274,7 +270,7 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::processGroundTruthUpdate(
+bool RovioInterface<FILTER>::processGroundTruthUpdate(
     const Eigen::Vector3d &JrJV, const QPD &qJV, const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
@@ -291,7 +287,7 @@ bool RovioInterfaceImpl<FILTER>::processGroundTruthUpdate(
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::processGroundTruthOdometryUpdate(
+bool RovioInterface<FILTER>::processGroundTruthOdometryUpdate(
     const Eigen::Vector3d &JrJV, const QPD &qJV,
     const Eigen::Matrix<double, 6, 6> &measuredCov, const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
@@ -309,7 +305,7 @@ bool RovioInterfaceImpl<FILTER>::processGroundTruthOdometryUpdate(
 }
 
 template <typename FILTER>
-void RovioInterfaceImpl<FILTER>::registerStateUpdateCallback(
+void RovioInterface<FILTER>::registerStateUpdateCallback(
     RovioStateCallback callback) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
@@ -319,21 +315,17 @@ void RovioInterfaceImpl<FILTER>::registerStateUpdateCallback(
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::getState(RovioState *filter_update) {
+bool RovioInterface<FILTER>::getState(RovioState<FILTER> *filter_update) {
   CHECK_NOTNULL(filter_update);
   return getState(enable_feature_update_output_, enable_patch_update_output_,
                   filter_update);
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
-                                          const bool get_patch_update,
-                                          RovioState *base_filter_update) {
-  CHECK_NOTNULL(base_filter_update);
-
-  RovioStateImpl<FILTER> *filter_update =
-      static_cast<RovioStateImpl<FILTER> *>(base_filter_update);
-
+bool RovioInterface<FILTER>::getState(const bool get_feature_update,
+                                      const bool get_patch_update,
+                                      RovioState<FILTER> *filter_update) {
+  CHECK_NOTNULL(filter_update);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   // Check if filter is initialized.
@@ -390,11 +382,9 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
   filter_update->acb = state.acb();
 
   if (get_feature_update) {
-    RovioFeatureStateImpl<FILTER> *feature_state_ptr =
-        new RovioFeatureStateImpl<FILTER>();
-    RovioFeatureStateImpl<FILTER> &feature_state = *feature_state_ptr;
+    filter_update->feature_state.reset(new RovioFeatureState<FILTER>());
+    RovioFeatureState<FILTER> &feature_state = *filter_update->feature_state;
 
-    filter_update->feature_state.reset(feature_state_ptr);
     filter_update->hasFeatureUpdate = true;
 
     FeatureDistance distance;
@@ -466,15 +456,12 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
   }
 
   if (get_patch_update) {
-    RovioPatchStateImpl<FILTER> *patch_state_ptr =
-        new RovioPatchStateImpl<FILTER>();
-    RovioPatchStateImpl<FILTER> &patch_state = *patch_state_ptr;
+    filter_update->patch_state.reset(new RovioPatchState<FILTER>());
+    RovioPatchState<FILTER> &patch_state = *filter_update->patch_state;
 
-    filter_update->patch_state.reset(patch_state_ptr);
     filter_update->hasPatchUpdate = true;
 
-    for (unsigned int i = 0u; i < RovioStateImpl<FILTER>::kMaxNumFeatures;
-         ++i) {
+    for (unsigned int i = 0u; i < RovioState<FILTER>::kMaxNumFeatures; ++i) {
       const bool featureIsValid = filterState.fsm_.isValid_[i];
       featureIsValid;
 
@@ -485,8 +472,7 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
       patch_state.isFeatureValid[i] = true;
       patch_state.patchIndices[i] = filterState.fsm_.features_[i].idx_;
 
-      for (unsigned int j = 0u; j < RovioStateImpl<FILTER>::kNumPatchLevels;
-           ++j) {
+      for (unsigned int j = 0u; j < RovioState<FILTER>::kNumPatchLevels; ++j) {
         patch_state.patches[i][j] =
             filterState.fsm_.features_[i].mpMultilevelPatch_->patches_[j];
         patch_state.isPatchValid[i][j] =
@@ -498,7 +484,7 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
   return true;
 }
 
-template <typename FILTER> bool RovioInterfaceImpl<FILTER>::updateFilter() {
+template <typename FILTER> bool RovioInterface<FILTER>::updateFilter() {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   // Statistics values that persist over all updates.
@@ -543,23 +529,17 @@ template <typename FILTER> bool RovioInterfaceImpl<FILTER>::updateFilter() {
   visualizeUpdate();
 
   // Notify all filter state update callbacks.
-  std::unique_ptr<RovioState> state(new RovioStateImpl<FILTER>());
-  const bool hasNewState = getState(state.get());
+  RovioState<FILTER> state;
+  const bool hasNewState = getState(&state);
   if (hasNewState) {
-    notifyAllStateUpdateCallbacks(*state);
+    for (const RovioStateCallback& callback : filter_update_state_callbacks_) {
+      callback(state);
+    }
   }
   return hasNewState;
 }
 
-template <typename FILTER>
-void RovioInterfaceImpl<FILTER>::notifyAllStateUpdateCallbacks(
-    const RovioState &state) const {
-  for (const RovioStateCallback &callback : filter_update_state_callbacks_) {
-    callback(state);
-  }
-}
-
-template <typename FILTER> void RovioInterfaceImpl<FILTER>::visualizeUpdate() {
+template <typename FILTER> void RovioInterface<FILTER>::visualizeUpdate() {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   for (int i = 0; i < mtState::nCam_; i++) {
@@ -599,7 +579,7 @@ template <typename FILTER> void RovioInterfaceImpl<FILTER>::visualizeUpdate() {
   }
 }
 
-template <typename FILTER> void RovioInterfaceImpl<FILTER>::makeTest() {
+template <typename FILTER> void RovioInterface<FILTER>::makeTest() {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   mtFilterState *mpTestFilterState = new mtFilterState();
@@ -711,4 +691,4 @@ template <typename FILTER> void RovioInterfaceImpl<FILTER>::makeTest() {
 
 } // namespace rovio
 
-#endif // ROVIO_ROVIO_INTERFACE_IMPL_INL_HPP_
+#endif // ROVIO_ROVIO_INTERFACE_INL_HPP_
