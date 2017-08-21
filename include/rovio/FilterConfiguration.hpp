@@ -29,11 +29,31 @@
 #ifndef ROVIO_FILTER_CONFIGURATION_HPP_
 #define ROVIO_FILTER_CONFIGURATION_HPP_
 
+#include <string>
+
 #include <boost/property_tree/info_parser.hpp>
 #include <boost/property_tree/ptree.hpp>
 
 namespace rovio {
 struct FilterConfiguration : public boost::property_tree::ptree {
+  typedef boost::property_tree::ptree ptree;
+
+  FilterConfiguration() : boost::property_tree::ptree() {}
+
+  FilterConfiguration(const std::string &config_file)
+      : boost::property_tree::ptree() {
+    loadFromFile(config_file);
+  }
+
+  void loadFromFile(const std::string &config_file) {
+    try {
+      ptree *propertyTreePtr = this;
+      read_info(config_file, *propertyTreePtr);
+    } catch (boost::property_tree::ptree_error &e) {
+      std::cout << "Unable to load the filter configuration from "
+                << config_file << "! Exception: " << e.what() << std::endl;
+    }
+  }
 
   // TODO(mfehr): This is just an example of a convenience function to set the
   // filter config programmatically rather than using the file.

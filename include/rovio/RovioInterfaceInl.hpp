@@ -98,7 +98,7 @@ RovioInterface<FILTER>::RovioInterface(
 
 template <typename FILTER>
 RovioInterface<FILTER>::RovioInterface(const FilterConfiguration &filter_config)
-    : RovioInterface(new mtFilter) {
+    : RovioInterface(std::make_shared<mtFilter>()) {
   CHECK(mpFilter_);
 
   typedef boost::property_tree::ptree PropertyTree;

@@ -22,6 +22,8 @@ namespace rovio{
   }
 
   bool Camera::setCalibration(const CameraCalibration &calibration) {
+    CHECK(calibration.hasCalibration_);
+
     // Set camera intrinsics.
     K_ = calibration.K_;
 

@@ -39,6 +39,8 @@
 #include <geometry_msgs/Pose.h>
 #pragma GCC diagnostic pop
 
+#include "rovio/CameraCalibration.hpp"
+#include "rovio/FilterConfiguration.hpp"
 #include "rovio/RovioFilter.hpp"
 #include "rovio/RovioRosNode.hpp"
 #ifdef MAKE_SCENE
@@ -93,24 +95,25 @@ int main(int argc, char** argv){
   ros::NodeHandle nh;
   ros::NodeHandle nh_private("~");
 
+  // Load filter configuration.
   std::string rootdir = ros::package::getPath("rovio"); // Leaks memory
-  std::string filter_config = rootdir + "/cfg/rovio.info";
+  std::string filter_config_file = rootdir + "/cfg/rovio.info";
+  nh_private.param("filter_config", filter_config_file, filter_config_file);
+  rovio::FilterConfiguration filter_config(filter_config_file);
 
-  nh_private.param("filter_config", filter_config, filter_config);
-
-  std::string camera_calibration_files[nCam_];
-
-  // Force the camera calibration paths to the ones from ROS parameters.
+  // Overwrite camera calibrations that are part of the filter configuration if
+  // there is a ros parameter providing a different camera calibration file.
+  rovio::CameraCalibration camera_calibrations[nCam_];
   for (unsigned int camID = 0; camID < nCam_; ++camID) {
     std::string camera_config;
     if (nh_private.getParam("camera" + std::to_string(camID)
                             + "_config", camera_config)) {
-      camera_calibration_files[camID] = camera_config;
+      camera_calibrations[camID].loadFromFile(camera_config);
     }
   }
 
   // Set up ROVIO by using the RovioInterface.
-  rovio::RovioInterface<mtFilter> rovioInterface(filter_config, camera_calibration_files);
+  rovio::RovioInterface<mtFilter> rovioInterface(filter_config, camera_calibrations);
   rovioInterface.makeTest();
 
   // Create the ROVIO ROS node and connect it to the interface.

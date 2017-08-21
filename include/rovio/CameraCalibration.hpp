@@ -61,6 +61,16 @@ static const std::string DATA = "data";
 struct CameraCalibration {
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
+  CameraCalibration() {}
+
+  CameraCalibration(const std::string &calibration_yaml_file) {
+    loadFromFile(calibration_yaml_file);
+  }
+
+  /** \brief Does this struct contain a calibration?
+   * */
+  bool hasCalibration_ = false;
+
   /** \brief Camera intrinsics.
    * */
   Eigen::Matrix3d K_;

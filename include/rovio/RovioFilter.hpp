@@ -197,7 +197,10 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
   void setCameraCalibrations(
       const CameraCalibration (&camera_calibrations)[mtState::nCam_]) {
     for (int camID = 0; camID < mtState::nCam_; camID++) {
-      multiCamera_.cameras_[camID].init(camera_calibrations[camID]);
+      const CameraCalibration &camera_calibration = camera_calibrations[camID];
+      if (camera_calibration.hasCalibration_) {
+        multiCamera_.cameras_[camID].setCalibration(camera_calibration);
+      }
     }
   }
 

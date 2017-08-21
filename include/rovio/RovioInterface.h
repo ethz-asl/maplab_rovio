@@ -54,13 +54,13 @@ template <typename FILTER> class RovioInterface {
 public:
   RovioInterface(typename std::shared_ptr<FILTER> mpFilter);
 
-  RovioInterface(const std::string &filter_config_file);
+  explicit RovioInterface(const std::string &filter_config_file);
   RovioInterface(
       const std::string &filter_config_file,
       const std::string (
           &camera_calibration_files)[RovioState<FILTER>::kNumCameras]);
 
-  RovioInterface(const FilterConfiguration &filter_config);
+  explicit RovioInterface(const FilterConfiguration &filter_config);
   RovioInterface(const FilterConfiguration &filter_config,
                  const CameraCalibration (
                      &camera_calibrations)[RovioState<FILTER>::kNumCameras]);
