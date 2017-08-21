@@ -57,16 +57,17 @@ class RovioInterfaceImpl : public RovioInterface {
 public:
   RovioInterfaceImpl(typename std::shared_ptr<FILTER> mpFilter);
 
-  RovioInterfaceImpl(const std::string &filter_config_file);
+  explicit RovioInterfaceImpl(const std::string &filter_config_file);
   RovioInterfaceImpl(
       const std::string &filter_config_file,
       const std::string (
           &camera_calibration_files)[RovioStateImpl<FILTER>::kNumCameras]);
 
-  RovioInterfaceImpl(const FilterConfiguration &filter_config);
-  RovioInterfaceImpl(const FilterConfiguration &filter_config,
-                 const CameraCalibration (
-                     &camera_calibrations)[RovioStateImpl<FILTER>::kNumCameras]);
+  explicit RovioInterfaceImpl(const FilterConfiguration &filter_config);
+  RovioInterfaceImpl(
+      const FilterConfiguration &filter_config,
+      const CameraCalibration (
+          &camera_calibrations)[RovioStateImpl<FILTER>::kNumCameras]);
 
   typedef FILTER mtFilter;
   typedef typename mtFilter::mtFilterState mtFilterState;
