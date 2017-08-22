@@ -117,11 +117,13 @@ include_directories(include ${catkin_INCLUDE_DIRS} ${YamlCpp_INCLUDE_DIRS} ${glo
 
 if(MAKE_SCENE)
 	add_library(${PROJECT_NAME} src/Camera.cpp
+                              src/CameraCalibration.cpp
                               src/FeatureCoordinates.cpp
                               src/FeatureDistance.cpp
                               src/Scene.cpp)
 else()
 	add_library(${PROJECT_NAME} src/Camera.cpp
+                              src/CameraCalibration.cpp
                               src/FeatureCoordinates.cpp
                               src/FeatureDistance.cpp)
 endif()

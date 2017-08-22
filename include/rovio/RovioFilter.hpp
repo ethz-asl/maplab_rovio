@@ -59,6 +59,7 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
   using Base::safe_;
   using Base::front_;
   using Base::readFromInfo;
+  using Base::readFromPropertyTree;
   using Base::boolRegister_;
   using Base::intRegister_;
   using Base::doubleRegister_;
@@ -91,7 +92,7 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
     intRegister_.registerScalar("Common.depthType",depthTypeInt_);
     for(int camID=0;camID<mtState::nCam_;camID++){
       cameraCalibrationFile_[camID] = "";
-      stringRegister_.registerScalar("Camera" + std::to_string(camID) + ".CalibrationFile",cameraCalibrationFile_[camID]);
+      stringRegister_.registerScalar("Camera" + std::to_string(camID) + ".CalibrationFile", cameraCalibrationFile_[camID]);
       doubleRegister_.registerVector("Camera" + std::to_string(camID) + ".MrMC",init_.state_.aux().MrMC_[camID]);
       doubleRegister_.registerQuaternion("Camera" + std::to_string(camID) + ".qCM",init_.state_.aux().qCM_[camID]);
       doubleRegister_.removeScalarByVar(init_.state_.MrMC(camID)(0));
@@ -182,13 +183,26 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
     }
     for(int camID = 0;camID<mtState::nCam_;camID++){
       if (!cameraCalibrationFile_[camID].empty()) {
-        multiCamera_.cameras_[camID].load(cameraCalibrationFile_[camID]);
+        multiCamera_.cameras_[camID].loadCalibrationFromFile(
+            cameraCalibrationFile_[camID]);
       }
     }
     for(int i=0;i<FILTERSTATE::mtState::nMax_;i++){
       init_.state_.dep(i).setType(depthTypeInt_);
     }
   };
+
+  /** \brief Sets the camera calibration for all cameras.
+   */
+  void setCameraCalibrations(
+      const CameraCalibration (&camera_calibrations)[mtState::nCam_]) {
+    for (int camID = 0; camID < mtState::nCam_; camID++) {
+      const CameraCalibration &camera_calibration = camera_calibrations[camID];
+      if (camera_calibration.hasCalibration_) {
+        multiCamera_.cameras_[camID].setCalibration(camera_calibration);
+      }
+    }
+  }
 
   /** \brief Destructor
    */

@@ -34,30 +34,17 @@
 #include <mutex>
 #include <queue>
 
-#include <cv_bridge/cv_bridge.h>
-#include <geometry_msgs/Pose.h>
-#include <geometry_msgs/PoseWithCovarianceStamped.h>
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <glog/logging.h>
-#include <nav_msgs/Odometry.h>
-#include <ros/ros.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/Imu.h>
-#include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/image_encodings.h>
-#include <std_srvs/Empty.h>
-#include <tf/transform_broadcaster.h>
-#include <visualization_msgs/Marker.h>
 
+#include "rovio/CameraCalibration.hpp"
 #include "rovio/CoordinateTransform/FeatureOutput.hpp"
 #include "rovio/CoordinateTransform/FeatureOutputReadable.hpp"
 #include "rovio/CoordinateTransform/LandmarkOutput.hpp"
 #include "rovio/CoordinateTransform/RovioOutput.hpp"
 #include "rovio/CoordinateTransform/YprOutput.hpp"
+#include "rovio/FilterConfiguration.hpp"
 #include "rovio/RovioFilter.hpp"
 #include "rovio/RovioInterfaceStates.h"
-#include "rovio/SrvResetToPose.h"
 
 namespace rovio {
 
@@ -66,6 +53,17 @@ struct FilterInitializationState;
 template <typename FILTER> class RovioInterface {
 public:
   RovioInterface(typename std::shared_ptr<FILTER> mpFilter);
+
+  explicit RovioInterface(const std::string &filter_config_file);
+  RovioInterface(
+      const std::string &filter_config_file,
+      const std::string (
+          &camera_calibration_files)[RovioState<FILTER>::kNumCameras]);
+
+  explicit RovioInterface(const FilterConfiguration &filter_config);
+  RovioInterface(const FilterConfiguration &filter_config,
+                 const CameraCalibration (
+                     &camera_calibrations)[RovioState<FILTER>::kNumCameras]);
 
   typedef FILTER mtFilter;
   typedef typename mtFilter::mtFilterState mtFilterState;
@@ -79,10 +77,8 @@ public:
                 RovioState<FILTER> *filter_update);
   bool getState(RovioState<FILTER> *filter_update);
 
-  /** \brief Trigger a filter update. Will return true if an update happened.
+  /** \brief Returns the time step of the last/latest safe filter state..
   */
-  bool updateFilter();
-
   double getLastSafeTime();
 
   /** \brief Reset the filter when the next IMU measurement is received.
@@ -135,17 +131,23 @@ public:
    */
   void makeTest();
 
+private:
+  /** \brief Trigger a filter update. Will return true if an update happened.
+  */
+  bool updateFilter();
+
   /** \brief Print update to std::cout and visualize images using opencv. The
    *  visualization is configured and enabled/disabled based on mpImgUpdate.
   */
   void visualizeUpdate();
 
-private:
   std::vector<RovioStateCallback> filter_update_state_callbacks_;
 
   typedef StandardOutput mtOutput;
 
-  // Rovio filter variables.
+  // TODO(mfehr): Ownership of the filter does not need to be shared, consider
+  // changing to unique ptr or raw ptr if someone outside the interface can own
+  // the filter.
   std::shared_ptr<mtFilter> mpFilter_;
 
   typedef typename mtFilter::mtPrediction::mtMeas mtPredictionMeas;
