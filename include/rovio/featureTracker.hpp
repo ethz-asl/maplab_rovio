@@ -44,6 +44,8 @@ namespace rovio{
  */
 class FeatureTrackerNode{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   ros::NodeHandle nh_;
   ros::Subscriber subImu_;  /**<IMU subscriber.*/
   ros::Subscriber subImg_;  /**<Image subscriber.*/

@@ -49,6 +49,8 @@ namespace rovio {
 template<typename STATE>
 class ImgInnovation: public LWF::State<LWF::VectorElement<2>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef LWF::State<LWF::VectorElement<2>> Base;
   using Base::E_;
   static constexpr unsigned int _pix = 0;
@@ -68,6 +70,8 @@ class ImgInnovation: public LWF::State<LWF::VectorElement<2>>{
 template<typename STATE>
 class ImgUpdateMeasAuxiliary: public LWF::AuxiliaryBase<ImgUpdateMeasAuxiliary<STATE>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   ImgUpdateMeasAuxiliary(){
     reset(0.0);
   };
@@ -98,6 +102,8 @@ class ImgUpdateMeasAuxiliary: public LWF::AuxiliaryBase<ImgUpdateMeasAuxiliary<S
 template<typename STATE>
 class ImgUpdateMeas: public LWF::State<ImgUpdateMeasAuxiliary<STATE>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef LWF::State<ImgUpdateMeasAuxiliary<STATE>> Base;
   using Base::E_;
   static constexpr unsigned int _aux = 0;
@@ -130,6 +136,8 @@ class ImgUpdateMeas: public LWF::State<ImgUpdateMeasAuxiliary<STATE>>{
 template<typename STATE>
 class ImgUpdateNoise: public LWF::State<LWF::VectorElement<2>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef LWF::State<LWF::VectorElement<2>> Base;
   using Base::E_;
   static constexpr unsigned int _pix = 0;
@@ -162,6 +170,8 @@ template<typename FILTERSTATE>
 class ImgUpdate: public LWF::Update<ImgInnovation<typename FILTERSTATE::mtState>,FILTERSTATE,ImgUpdateMeas<typename FILTERSTATE::mtState>,ImgUpdateNoise<typename FILTERSTATE::mtState>,
 ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef LWF::Update<ImgInnovation<typename FILTERSTATE::mtState>,FILTERSTATE,ImgUpdateMeas<typename FILTERSTATE::mtState>,ImgUpdateNoise<typename FILTERSTATE::mtState>,
       ImgOutlierDetection<typename FILTERSTATE::mtState>,false> Base;
   using Base::meas_;

@@ -50,6 +50,8 @@ namespace rovio{
 template<int nLevels,int patchSize, int nCam>
 class FeatureManager{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   int idx_;  /**<Feature ID.*/
 
   FeatureCoordinates log_previous_;
@@ -132,6 +134,8 @@ class FeatureManager{
 template<int nLevels,int patchSize, int nCam,int nMax>
 class FeatureSetManager{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   FeatureManager<nLevels,patchSize,nCam> features_[nMax];  /**<Array of features.*/
   bool isValid_[nMax];  /**<Array, defining if there is a valid MultilevelPatchFeature at the considered array index. */
   int maxIdx_;  /**<Current maximum array/set index. Number of MultilevelPatchFeature, which have already been inserted into the set. */

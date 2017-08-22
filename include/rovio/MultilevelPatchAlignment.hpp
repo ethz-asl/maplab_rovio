@@ -44,6 +44,8 @@ namespace rovio{
 template<int nLevels,int patch_size>
 class MultilevelPatchAlignment {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   mutable Eigen::MatrixXf A_;  /**<A matrix of the linear system of equations, needed for the multilevel patch alignment.*/
   mutable Eigen::MatrixXf b_;  /**<b matrix/vector of the linear system of equations, needed for the multilevel patch alignment.*/
   mutable Eigen::ColPivHouseholderQR<Eigen::MatrixXf> mColPivHouseholderQR_;  /**<QR decomposition module. Used for computiong reduces system of equations.*/
@@ -275,7 +277,6 @@ class MultilevelPatchAlignment {
               A((numLevel-1)*patch_size*patch_size+y*patch_size+x,0) *= gradientBasedWeighting;
               A((numLevel-1)*patch_size*patch_size+y*patch_size+x,1) *= gradientBasedWeighting;
             }
-
             if(useWeighting_){
               b((numLevel-1)*patch_size*patch_size+y*patch_size+x,0) *= *it_w;
               A((numLevel-1)*patch_size*patch_size+y*patch_size+x,0) *= *it_w;

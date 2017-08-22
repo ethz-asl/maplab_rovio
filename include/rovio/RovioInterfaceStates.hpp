@@ -103,6 +103,8 @@ struct RovioState {
 
 template <typename FILTER>
 struct RovioStateImpl : public RovioState {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   static constexpr int kNumCameras = FILTER::mtFilterState::mtState::nCam_;
   static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
   static constexpr int kPatchSize = FILTER::mtFilterState::mtState::patchSize_;

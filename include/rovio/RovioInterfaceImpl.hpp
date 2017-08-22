@@ -55,6 +55,8 @@ struct FilterInitializationState;
 template <typename FILTER>
 class RovioInterfaceImpl : public RovioInterface {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   RovioInterfaceImpl(typename std::shared_ptr<FILTER> mpFilter);
 
   RovioInterfaceImpl(const std::string &filter_config_file);

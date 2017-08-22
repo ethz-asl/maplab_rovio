@@ -40,6 +40,7 @@
 #include "rovio/CoordinateTransform/LandmarkOutput.hpp"
 #include "rovio/CoordinateTransform/RovioOutput.hpp"
 #include "rovio/CoordinateTransform/YprOutput.hpp"
+#include "rovio/Memory.hpp"
 #include "rovio/RovioFilter.hpp"
 
 namespace rovio {
@@ -60,7 +61,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(const std::string &filter_config_file)
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+    : RovioInterfaceImpl(aligned_shared<mtFilter>()) {
   CHECK(mpFilter_);
   CHECK(!filter_config_file.empty());
 
@@ -73,7 +74,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const std::string &filter_config_file,
     const std::string (
         &camera_calibration_files)[RovioStateImpl<FILTER>::kNumCameras])
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+    : RovioInterfaceImpl(aligned_shared<mtFilter>()) {
   CHECK(mpFilter_);
   CHECK(!filter_config_file.empty());
 
