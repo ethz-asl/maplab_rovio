@@ -33,6 +33,7 @@
 #include "lightweight_filtering/FilterBase.hpp"
 #include "rovio/FilterStates.hpp"
 #include "rovio/ImgUpdate.hpp"
+#include "rovio/Memory.hpp"
 #include "rovio/PoseUpdate.hpp"
 #include "rovio/VelocityUpdate.hpp"
 #include "rovio/ImuPrediction.hpp"
@@ -197,7 +198,7 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
   /** \brief Sets the camera calibration for all cameras.
    */
   void setCameraCalibrations(
-      const std::vector<CameraCalibration>& camera_calibrations) {
+      const Aligned<std::vector, CameraCalibration>& camera_calibrations) {
     CHECK_EQ(camera_calibrations.size(), mtState::nCam_);
     for (int camID = 0; camID < mtState::nCam_; camID++) {
       const CameraCalibration &camera_calibration = camera_calibrations[camID];

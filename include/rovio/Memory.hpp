@@ -7,6 +7,9 @@
 #include <Eigen/Core>
 #include <Eigen/StdVector>
 
+template <template <typename, typename> class Container, typename Type>
+using Aligned = Container<Type, Eigen::aligned_allocator<Type>>;
+
 /// \brief Aligned allocator to be used like std::make_shared
 ///
 /// To be used like:
