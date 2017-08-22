@@ -36,6 +36,8 @@ namespace rovio {
 
 class RovioInterface {
  public:
+  virtual ~RovioInterface() = 0;
+
   virtual bool getState(const bool get_feature_update, const bool get_patch_update,
                 RovioState *filter_update) = 0;
   virtual bool getState(RovioState *filter_update) = 0;

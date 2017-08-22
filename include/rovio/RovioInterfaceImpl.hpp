@@ -69,6 +69,8 @@ public:
       const CameraCalibration (
           &camera_calibrations)[RovioStateImpl<FILTER>::kNumCameras]);
 
+  virtual ~RovioInterfaceImpl() {}
+
   typedef FILTER mtFilter;
   typedef typename mtFilter::mtFilterState mtFilterState;
   typedef typename mtFilterState::mtState mtState;

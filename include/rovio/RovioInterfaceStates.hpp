@@ -29,6 +29,8 @@
 #ifndef ROVIO_ROVIO_INTERFACE_STATE_H_
 #define ROVIO_ROVIO_INTERFACE_STATE_H_
 
+#include <glog/logging.h>
+
 #include "rovio/RovioFilter.hpp"
 
 namespace rovio {
@@ -70,6 +72,8 @@ struct RovioFeatureState {
 };
 
 struct RovioState {
+  virtual ~RovioState() = 0;
+
   virtual bool getIsInitialized() const = 0;
 
   virtual double getTimeAfterUpdate() const = 0;
