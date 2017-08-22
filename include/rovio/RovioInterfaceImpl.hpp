@@ -44,7 +44,7 @@
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/FilterConfiguration.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "RovioInterfaceStates.hpp"
+#include "RovioInterfaceStatesImpl.hpp"
 
 #include "rovio/RovioInterface.hpp"
 
@@ -59,16 +59,17 @@ public:
 
   RovioInterfaceImpl(typename std::shared_ptr<FILTER> mpFilter);
 
-  RovioInterfaceImpl(const std::string &filter_config_file);
+  explicit RovioInterfaceImpl(const std::string &filter_config_file);
   RovioInterfaceImpl(
       const std::string &filter_config_file,
-      const std::string (
-          &camera_calibration_files)[RovioStateImpl<FILTER>::kNumCameras]);
+      const std::vector<std::string>& camera_calibration_files);
 
-  RovioInterfaceImpl(const FilterConfiguration &filter_config);
-  RovioInterfaceImpl(const FilterConfiguration &filter_config,
-                 const CameraCalibration (
-                     &camera_calibrations)[RovioStateImpl<FILTER>::kNumCameras]);
+  explicit RovioInterfaceImpl(const FilterConfiguration &filter_config);
+  RovioInterfaceImpl(
+      const FilterConfiguration &filter_config,
+      const std::vector<CameraCalibration>& camera_calibrations);
+
+  virtual ~RovioInterfaceImpl() {}
 
   typedef FILTER mtFilter;
   typedef typename mtFilter::mtFilterState mtFilterState;

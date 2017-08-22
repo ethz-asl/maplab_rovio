@@ -115,17 +115,20 @@ catkin_package(
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${YamlCpp_INCLUDE_DIRS} ${glog_catkin_INCLUDE_DIRS})
 
+set(ROVIO_SRCS
+  src/Camera.cpp
+  src/CameraCalibration.cpp
+  src/FeatureCoordinates.cpp
+  src/FeatureDistance.cpp
+  src/RovioInterfaces.cpp
+)
+
+# Optionally also build the SCENE files. 
 if(MAKE_SCENE)
-	add_library(${PROJECT_NAME} src/Camera.cpp
-                              src/FeatureCoordinates.cpp
-                              src/FeatureDistance.cpp
-                              src/Scene.cpp)
-else()
-	add_library(${PROJECT_NAME} src/Camera.cpp
-                              src/FeatureCoordinates.cpp
-                              src/FeatureDistance.cpp)
+	set(ROVIO_SRCS ${ROVIO_SRCS} src/Scene.cpp)  
 endif()
 
+add_library(${PROJECT_NAME} ${ROVIO_SRCS})
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${OpenMP_EXE_LINKER_FLAGS} ${OPENGL_LIBRARIES} ${GLUT_LIBRARY} ${GLEW_LIBRARY} ${glog_catkin_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} rovio_generate_messages_cpp)
 

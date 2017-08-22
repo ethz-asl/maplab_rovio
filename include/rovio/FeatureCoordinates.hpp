@@ -42,16 +42,6 @@ namespace rovio{
 
 /** \brief Helper function for transforming a cv::Point2f to a Eigen::Vector2f
  *
- * @param p - cv::Point2f
- * @return Eigen::Vector2f
- */
-static Eigen::Vector2f pointToVec2f(const cv::Point2f& p){
-  return Eigen::Vector2f(p.x,p.y);
-}
-
-
-/** \brief Helper function for transforming a cv::Point2f to a Eigen::Vector2f
- *
  * @param v - Eigen::Vector2f
  * @return cv::Point2f
  */

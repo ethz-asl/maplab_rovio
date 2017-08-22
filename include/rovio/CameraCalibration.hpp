@@ -29,6 +29,9 @@
 #ifndef ROVIO_CAMERA_CALIBRATION_HPP_
 #define ROVIO_CAMERA_CALIBRATION_HPP_
 
+#include <Eigen/Core>
+#include <yaml-cpp/yaml.h>
+
 namespace rovio {
 
 /** \brief Distortion model of the camera.
@@ -36,20 +39,84 @@ namespace rovio {
 enum class DistortionModel {
   RADTAN,   //!< Radial tangential distortion model.
   EQUIDIST, //!< Equidistant distortion model.
-  COUNT     //!< NOT A DISTORTION MODEL!
+  NUM       //!< NOT A DISTORTION MODEL!
 };
 
 static constexpr size_t NUM_DISTORTION_MODELS =
-    static_cast<size_t>(DistortionModel::COUNT);
+    static_cast<size_t>(DistortionModel::NUM);
 
-const std::array<size_t, NUM_DISTORTION_MODELS> NUM_DISTORTION_PARAMS = {
+const std::array<size_t, NUM_DISTORTION_MODELS> NUM_DISTORTION_MODEL_PARAMS = {
     {/*RADTAN (k1, k2, p1, p2, k3)*/ 5u,
      /*EQUIDIST (k1, k2, k3, k4)*/ 4u}};
 
+const std::array<std::string, NUM_DISTORTION_MODELS> DISTORTION_MODEL_NAME = {
+    {/*RADTAN*/ "plumb_bob",
+     /*EQUIDIST*/ "equidistant"}};
+
+// YAML keywords.
+static const std::string CAMERA_MATRIX = "camera_matrix";
+static const std::string DIST_COEFFS = "distortion_coefficients";
+static const std::string DATA = "data";
+
 struct CameraCalibration {
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
+  CameraCalibration() {}
+
+  CameraCalibration(const std::string &calibration_yaml_file) {
+    loadFromFile(calibration_yaml_file);
+  }
+
+  /** \brief Does this struct contain a calibration?
+   * */
+  bool hasCalibration_ = false;
+
+  /** \brief Camera intrinsics.
+   * */
+  Eigen::Matrix3d K_;
+
+  /** \brief Camera distortion model.
+   * */
   DistortionModel distortionModel_;
 
-  Eigen::VectorXd parameters_;
+  /** \brief Variable size distortion param vector.
+   * */
+  Eigen::VectorXd distortionParams_;
+
+  /** \brief Returns the size of the distortion_parameter vector.
+   * */
+  size_t getNumDistortionParam() {
+    return NUM_DISTORTION_MODEL_PARAMS[static_cast<int>(distortionModel_)];
+  }
+
+  /** \brief Loads and sets the distortion model and the corresponding
+   * distortion coefficients from yaml-file.
+   *
+   *   @param filename - Path to the yaml-file, containing the distortion model
+   * and distortion coefficient data.
+   */
+  void loadFromFile(const std::string& calibration_yaml_file);
+
+  /** \brief Loads and sets the distortion parameters {k1_, k2_, k3_, p1_, p2_}
+   * for the Radtan distortion model from yaml-file.
+   *   @param filename - Path to the yaml-file, containing the distortion
+   * coefficients.
+   */
+  void loadRadTanDistortion(const std::string &calibration_yaml_file);
+
+  /** \brief Loads and sets the distortion parameters {k1_, k2_, k3_, k4_} for
+   * the Equidistant distortion model from yaml-file.
+   *   @param filename - Path to the yaml-file, containing the distortion
+   * coefficients.
+   */
+  void loadEquidistDistortion(const std::string &calibration_yaml_file);
+
+  /** \brief Loads and sets the intrinsic parameter matrix K_ from yaml-file.
+   *
+   *   @param filename - Path to the yaml-file, containing the intrinsic
+   * parameter matrix coefficients.
+   */
+  void loadCameraMatrix(const std::string &calibration_yaml_file);
 };
 
 } // namespace rovio

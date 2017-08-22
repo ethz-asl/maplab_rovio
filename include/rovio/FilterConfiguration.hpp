@@ -29,14 +29,53 @@
 #ifndef ROVIO_FILTER_CONFIGURATION_HPP_
 #define ROVIO_FILTER_CONFIGURATION_HPP_
 
-#include <boost/property_tree/ptree.hpp>
+#include <string>
+
 #include <boost/property_tree/info_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 
 namespace rovio {
 struct FilterConfiguration : public boost::property_tree::ptree {
+  typedef boost::property_tree::ptree ptree;
 
-  // TODO(mfehr): Add convenience functions to change config.
+  FilterConfiguration() : boost::property_tree::ptree() {}
 
+  FilterConfiguration(const std::string &config_file)
+      : boost::property_tree::ptree() {
+    loadFromFile(config_file);
+  }
+
+  void loadFromFile(const std::string &config_file) {
+    try {
+      ptree *propertyTreePtr = this;
+      read_info(config_file, *propertyTreePtr);
+    } catch (boost::property_tree::ptree_error &e) {
+      std::cout << "Unable to load the filter configuration from "
+                << config_file << "! Exception: " << e.what() << std::endl;
+    }
+  }
+
+#define GETTER_AND_SETTER(name, settings_string, data_type)                    \
+                                                                               \
+  inline data_type get##name(const data_type &default_value) {                 \
+    return get(#settings_string, default_value);                               \
+  }                                                                            \
+                                                                               \
+  inline bool get##name(data_type *value_ptr) {                                \
+    CHECK_NOTNULL(value_ptr);                                                  \
+    try {                                                                      \
+      *value_ptr = get<data_type>(#settings_string);                           \
+    } catch (...) {                                                            \
+      return false;                                                            \
+    }                                                                          \
+    return true;                                                               \
+  }                                                                            \
+                                                                               \
+  inline void set##name(const data_type &value) {                              \
+    put(#settings_string, value);                                              \
+  }
+
+  GETTER_AND_SETTER(DoVisualization, PoseUpdate.doVisualization, bool);
 };
 
 } // namespace rovio
