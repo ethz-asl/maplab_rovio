@@ -36,6 +36,7 @@
 namespace rovio {
 
 struct RovioPatchState {
+  virtual ~RovioPatchState() = 0;
   virtual bool get_isFeatureValid(const int feature_idx) const = 0;
   virtual int get_PatchIndex(const int feature_idx) const = 0;
   virtual bool get_isPatchValid(const int feature_idx,
@@ -50,6 +51,7 @@ struct RovioPatchState {
 };
 
 struct RovioFeatureState {
+  virtual ~RovioFeatureState() = 0;
   virtual bool get_isFeatureValid(const size_t feature_idx) const = 0;
 
   virtual int get_FeatureObservrCamID(const size_t feature_idx) const = 0;
@@ -76,7 +78,7 @@ struct RovioState {
 
   virtual bool getIsInitialized() const = 0;
 
-  virtual double getTimeAfterUpdate() const = 0;
+  virtual double getTimestamp() const = 0;
 
   virtual const Eigen::MatrixXd &getFilterCovariance() const = 0;
 

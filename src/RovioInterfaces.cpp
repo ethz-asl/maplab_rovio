@@ -32,4 +32,6 @@
 namespace rovio {
 RovioInterface::~RovioInterface() {}
 RovioState::~RovioState() {}
+RovioPatchState::~RovioPatchState() {}
+RovioFeatureState::~RovioFeatureState() {}
 } // namespace rovio
