@@ -82,7 +82,7 @@ class StateAuxiliary: public LWF::AuxiliaryBase<StateAuxiliary<nMax,nLevels,patc
   V3D MwWMest_;  /**<Estimated rotational rate.*/
   V3D MwWMmeas_;  /**<Measured rotational rate.*/
   M3D wMeasCov_;  /**<Covariance of the measured rotational rate.*/
-  Eigen::Matrix<double, 2, 2> A_red_[nMax];  /**<Reduced Jacobian of the pixel intensities w.r.t. to pixel coordinates, needed for the multilevel patch alignment. \see rovio::MultilevelPatchFeature::A_ \see rovio::getLinearAlignEquationsReduced()*/
+  Eigen::Matrix2d A_red_[nMax];  /**<Reduced Jacobian of the pixel intensities w.r.t. to pixel coordinates, needed for the multilevel patch alignment. \see rovio::MultilevelPatchFeature::A_ \see rovio::getLinearAlignEquationsReduced()*/
   Eigen::Vector2d b_red_[nMax];  /**<Reduced intensity errors, needed for the multilevel patch alignment. \see rovio::MultilevelPatchFeature::A_ \see rovio::getLinearAlignEquationsReduced()*/
   FeatureCoordinates feaCoorMeas_[nMax];  /**<Intermediate variable for storing the measured feature location.*/
   QPD qCM_[nCam];  /**<Quaternion Array: IMU coordinates to camera coordinates.*/
