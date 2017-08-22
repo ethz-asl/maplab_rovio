@@ -63,6 +63,9 @@ namespace rovio {
 template <typename FILTER> class RovioRosNode {
 public:
   typedef FILTER mtFilter;
+
+  // The ROS node does not own this interface, it needs to be
+  // constructed/destroyed outside of this class.
   RovioInterface *rovio_interface_;
 
   bool forceOdometryPublishing_;
@@ -186,6 +189,7 @@ public:
    */
   void publishState(const RovioState &state);
 
+private:
   static void publishStateCallback(const RovioState &state,
                                    void *this_pointer) {
     RovioRosNode<FILTER> *self =
@@ -374,7 +378,7 @@ RovioRosNode<FILTER>::RovioRosNode(ros::NodeHandle &nh,
   // Register state update callback.
   typename RovioInterface::RovioStateCallback callback = std::bind(
       &RovioRosNode<FILTER>::publishStateCallback, std::placeholders::_1, this);
-  rovio_interface_->registerStateUpdateCallback(callback);
+  CHECK_NOTNULL(rovio_interface_)->registerStateUpdateCallback(callback);
 }
 
 template <typename FILTER>
@@ -387,7 +391,7 @@ void RovioRosNode<FILTER>::imuCallback(
                       imu_msg->angular_velocity.z);
   const double time_s = imu_msg->header.stamp.toSec();
 
-  rovio_interface_->processImuUpdate(acc, gyr, time_s);
+  CHECK_NOTNULL(rovio_interface_)->processImuUpdate(acc, gyr, time_s);
 }
 
 template <typename FILTER>
@@ -430,7 +434,7 @@ void RovioRosNode<FILTER>::imgCallback(const sensor_msgs::ImageConstPtr &img,
 
   const double time_s = img->header.stamp.toSec();
 
-  rovio_interface_->processImageUpdate(camID, cv_img, time_s);
+  CHECK_NOTNULL(rovio_interface_)->processImageUpdate(camID, cv_img, time_s);
 }
 
 template <typename FILTER>
@@ -444,7 +448,7 @@ void RovioRosNode<FILTER>::groundtruthCallback(
           transform->transform.rotation.y, transform->transform.rotation.z);
   const double time_s = transform->header.stamp.toSec();
 
-  rovio_interface_->processGroundTruthUpdate(JrJV, qJV, time_s);
+  CHECK_NOTNULL(rovio_interface_)->processGroundTruthUpdate(JrJV, qJV, time_s);
 }
 
 template <typename FILTER>
@@ -464,8 +468,8 @@ void RovioRosNode<FILTER>::groundtruthOdometryCallback(
 
   const double time_s = odometry->header.stamp.toSec();
 
-  rovio_interface_->processGroundTruthOdometryUpdate(JrJV, qJV, measuredCov,
-                                                     time_s);
+  CHECK_NOTNULL(rovio_interface_)
+      ->processGroundTruthOdometryUpdate(JrJV, qJV, measuredCov, time_s);
 }
 
 template <typename FILTER>
@@ -475,14 +479,14 @@ void RovioRosNode<FILTER>::velocityCallback(
                       velocity->twist.linear.z);
   const double time_s = velocity->header.stamp.toSec();
 
-  rovio_interface_->processVelocityUpdate(AvM, time_s);
+  CHECK_NOTNULL(rovio_interface_)->processVelocityUpdate(AvM, time_s);
 }
 
 template <typename FILTER>
 bool RovioRosNode<FILTER>::resetServiceCallback(
     std_srvs::Empty::Request & /*request*/,
     std_srvs::Empty::Response & /*response*/) {
-  rovio_interface_->requestReset();
+  CHECK_NOTNULL(rovio_interface_)->requestReset();
   return true;
 }
 
@@ -495,15 +499,14 @@ bool RovioRosNode<FILTER>::resetToPoseServiceCallback(
   QPD qWM(request.T_WM.orientation.w, request.T_WM.orientation.x,
           request.T_WM.orientation.y, request.T_WM.orientation.z);
 
-  rovio_interface_->requestResetToPose(WrWM, qWM.inverted());
+  CHECK_NOTNULL(rovio_interface_)->requestResetToPose(WrWM, qWM.inverted());
 
   return true;
 }
 
 template <typename FILTER>
 void RovioRosNode<FILTER>::publishState(const RovioState &state) {
-  // const RovioStateImpl<FILTER>& state = static_cast<const
-  // RovioStateImpl<FILTER>&>(base_state);
+  CHECK_NOTNULL(rovio_interface_);
 
   // Update the settings that determine if the current state contains
   // information about the patches and features or not.

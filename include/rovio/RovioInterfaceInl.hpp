@@ -86,10 +86,6 @@ RovioInterface<FILTER>::RovioInterface(
     const std::string& camera_calibration_file = camera_calibration_files[camID];
     if (!camera_calibration_file.empty()) {
       mpFilter_->cameraCalibrationFile_[camID] = camera_calibration_file;
-    } else {
-      // Use the default camera calibration paths specified in the filter config
-      // file.
-      // TODO(mfehr): Do we need to check if either one of them was successful?
     }
   }
 
@@ -365,7 +361,7 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
   imuOutputCT_.transformState(state, imuOutput);
 
   // IMU frame:
-  // Transformation between world frame (W) and the IMU frame (B).
+  // Transformation between world frame (W) and the IMU frame / Body frame (B).
   filter_update->WrWB = imuOutput.WrWB();
   filter_update->qBW = imuOutput.qBW();
   // Velocities of IMU frame (B).
@@ -374,8 +370,8 @@ bool RovioInterface<FILTER>::getState(const bool get_feature_update,
 
   imuOutputCT_.transformCovMat(state, filter_update->filterCovariance,
                                filter_update->imuCovariance);
-  CHECK_GT(filter_update->imuCovariance.cols(), 0);
-  CHECK_GT(filter_update->imuCovariance.rows(), 0);
+  CHECK_EQ(filter_update->imuCovariance.cols(), 12);
+  CHECK_EQ(filter_update->imuCovariance.rows(), 12);
 
   // IMU biases.
   filter_update->gyb = state.gyb();

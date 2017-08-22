@@ -92,7 +92,7 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
     intRegister_.registerScalar("Common.depthType",depthTypeInt_);
     for(int camID=0;camID<mtState::nCam_;camID++){
       cameraCalibrationFile_[camID] = "";
-      stringRegister_.registerScalar("Camera" + std::to_string(camID) + ".CalibrationFile",cameraCalibrationFile_[camID]);
+      stringRegister_.registerScalar("Camera" + std::to_string(camID) + ".CalibrationFile", cameraCalibrationFile_[camID]);
       doubleRegister_.registerVector("Camera" + std::to_string(camID) + ".MrMC",init_.state_.aux().MrMC_[camID]);
       doubleRegister_.registerQuaternion("Camera" + std::to_string(camID) + ".qCM",init_.state_.aux().qCM_[camID]);
       doubleRegister_.removeScalarByVar(init_.state_.MrMC(camID)(0));

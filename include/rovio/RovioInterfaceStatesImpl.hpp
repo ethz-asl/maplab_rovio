@@ -228,7 +228,7 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
   Eigen::Vector3d MrMC[kNumCameras];
 
   // IMU frame:
-  // Transformation between world frame (W) and the IMU frame (B).
+  // Transformation between world frame (W) and the IMU frame / body frame (B).
   Eigen::Vector3d WrWB;
   kindr::RotationQuaternionPD qBW;
   // Velocities of IMU frame (B).
@@ -251,8 +251,8 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
   mtPoseUpdate *mpPoseUpdate;
 
   // Optional: Localization transform:
-  // Transformation between world frame (= global base frame) and inertial frame
-  // (= mission/odometry base frame).
+  // Transformation between world frame (= global base frame (W)) and inertial
+  // frame (= mission/odometry base frame (I)).
   bool hasInertialPose = false;
   Eigen::Vector3d IrIW;
   kindr::RotationQuaternionPD qWI;

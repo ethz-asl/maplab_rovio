@@ -55,22 +55,27 @@ struct FilterConfiguration : public boost::property_tree::ptree {
     }
   }
 
-  // TODO(mfehr): This is just an example of a convenience function to set the
-  // filter config programmatically rather than using the file.
-
-  /** \brief Should the measured poses be vizualized.
-   * */
-  bool getDoVisualization() const {
-    return get("PoseUpdate.doVisualization", false);
+#define GETTER_AND_SETTER(name, settings_string, data_type)                    \
+                                                                               \
+  inline data_type get##name(const data_type &default_value) {                 \
+    return get(#settings_string, default_value);                               \
+  }                                                                            \
+                                                                               \
+  inline bool get##name(data_type *value_ptr) {                                \
+    CHECK_NOTNULL(value_ptr);                                                  \
+    try {                                                                      \
+      *value_ptr = get<data_type>(#settings_string);                           \
+    } catch (...) {                                                            \
+      return false;                                                            \
+    }                                                                          \
+    return true;                                                               \
+  }                                                                            \
+                                                                               \
+  inline void set##name(const data_type &value) {                              \
+    put(#settings_string, value);                                              \
   }
 
-  /** \brief Should the measured poses be vizualized.
-   * */
-  void setDoVisualization(const bool doVisualization) {
-    put("PoseUpdate.doVisualization", doVisualization);
-  }
-
-  // TODO(mfehr): Add convenience functions to change config.
+  GETTER_AND_SETTER(DoVisualization, PoseUpdate.doVisualization, bool);
 };
 
 } // namespace rovio
