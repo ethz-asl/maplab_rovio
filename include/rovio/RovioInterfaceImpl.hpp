@@ -26,8 +26,8 @@
 *
 */
 
-#ifndef ROVIO_ROVIO_INTERFACE_H_
-#define ROVIO_ROVIO_INTERFACE_H_
+#ifndef ROVIO_ROVIO_INTERFACE_IMPL_H_
+#define ROVIO_ROVIO_INTERFACE_IMPL_H_
 
 #include <functional>
 #include <memory>
@@ -44,26 +44,30 @@
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/FilterConfiguration.hpp"
 #include "rovio/RovioFilter.hpp"
-#include "rovio/RovioInterfaceStates.h"
+#include "RovioInterfaceStatesImpl.hpp"
+
+#include "rovio/RovioInterface.hpp"
 
 namespace rovio {
 
 struct FilterInitializationState;
 
-template <typename FILTER> class RovioInterface {
+template <typename FILTER>
+class RovioInterfaceImpl : public RovioInterface {
 public:
-  RovioInterface(typename std::shared_ptr<FILTER> mpFilter);
+  RovioInterfaceImpl(typename std::shared_ptr<FILTER> mpFilter);
 
-  explicit RovioInterface(const std::string &filter_config_file);
-  RovioInterface(
+  explicit RovioInterfaceImpl(const std::string &filter_config_file);
+  RovioInterfaceImpl(
       const std::string &filter_config_file,
-      const std::string (
-          &camera_calibration_files)[RovioState<FILTER>::kNumCameras]);
+      const std::vector<std::string>& camera_calibration_files);
 
-  explicit RovioInterface(const FilterConfiguration &filter_config);
-  RovioInterface(const FilterConfiguration &filter_config,
-                 const CameraCalibration (
-                     &camera_calibrations)[RovioState<FILTER>::kNumCameras]);
+  explicit RovioInterfaceImpl(const FilterConfiguration &filter_config);
+  RovioInterfaceImpl(
+      const FilterConfiguration &filter_config,
+      const std::vector<CameraCalibration>& camera_calibrations);
+
+  virtual ~RovioInterfaceImpl() {}
 
   typedef FILTER mtFilter;
   typedef typename mtFilter::mtFilterState mtFilterState;
@@ -74,8 +78,8 @@ public:
   *          state will not be retrieved by default.
   */
   bool getState(const bool get_feature_update, const bool get_patch_update,
-                RovioState<FILTER> *filter_update);
-  bool getState(RovioState<FILTER> *filter_update);
+                RovioState* filter_update);
+  bool getState(RovioState* filter_update);
 
   /** \brief Returns the time step of the last/latest safe filter state..
   */
@@ -115,11 +119,11 @@ public:
   /** \brief Register multiple callbacks that are invoked once the filter
    *         concludes a successful update.
    */
-  typedef std::function<void(const RovioState<FILTER> &)> RovioStateCallback;
+  typedef std::function<void(const RovioState&)> RovioStateCallback;
   void registerStateUpdateCallback(RovioStateCallback callback);
 
   /** \brief Enable and disable feature and patch update output. If disabled,
-   *         the RovioState<FILTER> returned by the callback does not contain
+   *         the RovioStateImpl<FILTER> returned by the callback does not contain
    * any state information of the features/patches.
    */
   void setEnableFeatureUpdateOutput(const bool enable_feature_update);
@@ -135,6 +139,8 @@ private:
   /** \brief Trigger a filter update. Will return true if an update happened.
   */
   bool updateFilter();
+
+  void notifyAllStateUpdateCallbacks(const RovioState& state) const;
 
   /** \brief Print update to std::cout and visualize images using opencv. The
    *  visualization is configured and enabled/disabled based on mpImgUpdate.
@@ -225,6 +231,6 @@ private:
 
 } // namespace rovio
 
-#endif // ROVIO_ROVIO_INTERFACE_H_
+#endif // ROVIO_ROVIO_INTERFACE_IMPL_H_
 
-#include <rovio/RovioInterfaceInl.hpp>
+#include "RovioInterfaceImplInl.hpp"
