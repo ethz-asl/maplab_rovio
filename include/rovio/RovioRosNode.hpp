@@ -523,7 +523,7 @@ void RovioRosNode<FILTER>::publishState(const RovioState &state) {
     return;
   }
 
-  ros::Time rosTimeAfterUpdate = ros::Time(state.getTimeAfterUpdate());
+  ros::Time rosTimeAfterUpdate = ros::Time(state.getTimestamp());
 
   // TODO(mfehr): there has to be a better way than typedef-ing.
   typedef typename mtFilter::mtFilterState::mtState mtState;

@@ -41,6 +41,8 @@ template <typename FILTER> struct RovioPatchStateImpl : public RovioPatchState {
   static constexpr int kPatchSize = FILTER::mtFilterState::mtState::patchSize_;
   static constexpr int kPatchArea = kPatchSize * kPatchSize;
 
+  virtual ~RovioPatchStateImpl() {}
+
   bool get_isFeatureValid(const int feature_idx) const {
     DCHECK_LT(feature_idx, kMaxNumFeatures);
     return isFeatureValid[feature_idx];
@@ -85,7 +87,7 @@ template <typename FILTER> struct RovioPatchStateImpl : public RovioPatchState {
 
 template <typename FILTER>
 struct RovioFeatureStateImpl : public RovioFeatureState {
-
+  virtual ~RovioFeatureStateImpl() {}
   static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
 
   bool get_isFeatureValid(const size_t feature_idx) const {
@@ -177,7 +179,7 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
   static constexpr int kPatchAreaTimesLevels = kPatchArea * kNumPatchLevels;
 
   bool getIsInitialized() const { return isInitialized; }
-  double getTimeAfterUpdate() const { return timeAfterUpdate; }
+  double getTimestamp() const { return timeAfterUpdate; }
   const Eigen::MatrixXd &getFilterCovariance() const {
     return filterCovariance;
   }
