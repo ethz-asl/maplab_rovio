@@ -1,5 +1,5 @@
-#ifndef INCLUDE_ROVIO_MEMORY_HPP_
-#define INCLUDE_ROVIO_MEMORY_HPP_
+#ifndef ROVIO_MEMORY_HPP_
+#define ROVIO_MEMORY_HPP_
 
 #include <memory>
 #include <type_traits>
@@ -50,4 +50,4 @@ inline AlignedUniquePtr<Type> aligned_unique(Arguments&&... arguments) {
   return std::move(AlignedUniquePtr<Type>(obj));
 }
 
-#endif  // INCLUDE_ROVIO_MEMORY_HPP_
+#endif  // ROVIO_MEMORY_HPP_

@@ -106,6 +106,14 @@ struct RovioState {
 
   virtual bool hasPatchState() const = 0;
   virtual const RovioPatchState &getPatchState() const = 0;
+
+  // Optional: Feature state.
+  bool hasFeatureUpdate = false;
+  std::unique_ptr<RovioFeatureState> feature_state;
+
+  // Optional: Path state.
+  bool hasPatchUpdate = false;
+  std::unique_ptr<RovioPatchState> patch_state;
 };
 
 } // namespace rovio
