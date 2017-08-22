@@ -36,7 +36,7 @@
 
 namespace rovio {
 
-void CameraCalibration::loadFromFile(const std::string calibration_yaml_file) {
+void CameraCalibration::loadFromFile(const std::string& calibration_yaml_file) {
   CHECK(!calibration_yaml_file.empty());
 
   loadCameraMatrix(calibration_yaml_file);
@@ -63,13 +63,13 @@ void CameraCalibration::loadRadTanDistortion(
   YAML::Node config = YAML::LoadFile(calibration_yaml_file);
 
   distortionModel_ = DistortionModel::RADTAN;
-  distortion_params_.resize(getNumDistortionParam());
+  distortionParams_.resize(getNumDistortionParam());
 
-  distortion_params_[0] = config[DIST_COEFFS][DATA][0].as<double>();
-  distortion_params_[1] = config[DIST_COEFFS][DATA][1].as<double>();
-  distortion_params_[2] = config[DIST_COEFFS][DATA][2].as<double>();
-  distortion_params_[3] = config[DIST_COEFFS][DATA][3].as<double>();
-  distortion_params_[4] = config[DIST_COEFFS][DATA][4].as<double>();
+  distortionParams_[0] = config[DIST_COEFFS][DATA][0].as<double>();
+  distortionParams_[1] = config[DIST_COEFFS][DATA][1].as<double>();
+  distortionParams_[2] = config[DIST_COEFFS][DATA][2].as<double>();
+  distortionParams_[3] = config[DIST_COEFFS][DATA][3].as<double>();
+  distortionParams_[4] = config[DIST_COEFFS][DATA][4].as<double>();
 }
 
 void CameraCalibration::loadEquidistDistortion(
@@ -78,12 +78,12 @@ void CameraCalibration::loadEquidistDistortion(
   YAML::Node config = YAML::LoadFile(calibration_yaml_file);
 
   distortionModel_ = DistortionModel::EQUIDIST;
-  distortion_params_.resize(getNumDistortionParam());
+  distortionParams_.resize(getNumDistortionParam());
 
-  distortion_params_[0] = config[DIST_COEFFS][DATA][0].as<double>();
-  distortion_params_[1] = config[DIST_COEFFS][DATA][1].as<double>();
-  distortion_params_[2] = config[DIST_COEFFS][DATA][2].as<double>();
-  distortion_params_[3] = config[DIST_COEFFS][DATA][3].as<double>();
+  distortionParams_[0] = config[DIST_COEFFS][DATA][0].as<double>();
+  distortionParams_[1] = config[DIST_COEFFS][DATA][1].as<double>();
+  distortionParams_[2] = config[DIST_COEFFS][DATA][2].as<double>();
+  distortionParams_[3] = config[DIST_COEFFS][DATA][3].as<double>();
 }
 
 void CameraCalibration::loadCameraMatrix(

@@ -32,26 +32,26 @@ namespace rovio{
 
     switch (type_) {
     case DistortionModel::RADTAN:
-      CHECK_EQ(calibration.distortion_params_.size(),
+      CHECK_EQ(calibration.distortionParams_.size(),
                NUM_DISTORTION_MODEL_PARAMS[static_cast<int>(type_)]);
 
-      k1_ = calibration.distortion_params_[0];
-      k2_ = calibration.distortion_params_[1];
-      p1_ = calibration.distortion_params_[2];
-      p2_ = calibration.distortion_params_[3];
-      k3_ = calibration.distortion_params_[4];
+      k1_ = calibration.distortionParams_[0];
+      k2_ = calibration.distortionParams_[1];
+      p1_ = calibration.distortionParams_[2];
+      p2_ = calibration.distortionParams_[3];
+      k3_ = calibration.distortionParams_[4];
       std::cout << "Set distortion parameters (Radtan) to: k1(" << k1_
                 << "), k2(" << k2_ << "), k3(" << k3_ << "), p1(" << p1_
                 << "), p2(" << p2_ << ")" << std::endl;
       break;
     case DistortionModel::EQUIDIST:
-      CHECK_EQ(calibration.distortion_params_.size(),
+      CHECK_EQ(calibration.distortionParams_.size(),
                NUM_DISTORTION_MODEL_PARAMS[static_cast<int>(type_)]);
 
-      k1_ = calibration.distortion_params_[0];
-      k2_ = calibration.distortion_params_[1];
-      k3_ = calibration.distortion_params_[2];
-      k4_ = calibration.distortion_params_[3];
+      k1_ = calibration.distortionParams_[0];
+      k2_ = calibration.distortionParams_[1];
+      k3_ = calibration.distortionParams_[2];
+      k4_ = calibration.distortionParams_[3];
       std::cout << "Set distortion parameters (Equidist) to: k1(" << k1_
                 << "), k2(" << k2_ << "), k3(" << k3_ << "), k4(" << k4_ << ")"
                 << std::endl;

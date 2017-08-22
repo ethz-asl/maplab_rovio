@@ -81,7 +81,7 @@ struct CameraCalibration {
 
   /** \brief Variable size distortion param vector.
    * */
-  Eigen::VectorXd distortion_params_;
+  Eigen::VectorXd distortionParams_;
 
   /** \brief Returns the size of the distortion_parameter vector.
    * */
@@ -95,7 +95,7 @@ struct CameraCalibration {
    *   @param filename - Path to the yaml-file, containing the distortion model
    * and distortion coefficient data.
    */
-  void loadFromFile(const std::string calibration_yaml_file);
+  void loadFromFile(const std::string& calibration_yaml_file);
 
   /** \brief Loads and sets the distortion parameters {k1_, k2_, k3_, p1_, p2_}
    * for the Radtan distortion model from yaml-file.
