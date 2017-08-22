@@ -30,9 +30,21 @@
 #define ROVIO_ROVIOINTERFACEBUILDER_HPP_
 
 #include <Eigen/Core>
+#include <glog/logging.h>
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wreorder"
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#include "rovio/CameraCalibration.hpp"
+#include "rovio/FilterConfiguration.hpp"
+#include "rovio/FilterStates.hpp"
+#include "rovio/RovioFilter.hpp"
 #include "rovio/RovioInterface.hpp"
 #include "rovio/RovioInterfaceImpl.hpp"
+#pragma GCC diagnostic pop
 
 namespace rovio {
 template<
@@ -48,10 +60,12 @@ template<
   size_t kFeaturePatchSizePx
   > static RovioInterface* createRovioInterface(
     const FilterConfiguration& filter_config,
-    const std::vector<CameraCalibration> camera_calibrations) {
-  return new RovioInterfaceImpl<kMaxNumFeatures, kPyramidLevels,
-      kFeaturePatchSizePx, kNumCameras, kLocalizationMode>(
-          filter_config, camera_calibrations);
+    const std::vector<CameraCalibration>& camera_calibrations) {
+  CHECK_EQ(camera_calibrations.size(), kNumCameras);
+  typedef rovio::RovioFilter<
+      rovio::FilterState<kMaxNumFeatures, kPyramidLevels, kFeaturePatchSizePx,
+          kNumCameras, kLocalizationMode>> FilterType;
+  return new RovioInterfaceImpl<FilterType>(filter_config, camera_calibrations);
 }
 } // namespace rovio
 #endif  // ROVIO_ROVIOINTERFACEBUILDER_HPP_

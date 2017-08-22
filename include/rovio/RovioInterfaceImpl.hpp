@@ -60,14 +60,12 @@ public:
   explicit RovioInterfaceImpl(const std::string &filter_config_file);
   RovioInterfaceImpl(
       const std::string &filter_config_file,
-      const std::string (
-          &camera_calibration_files)[RovioStateImpl<FILTER>::kNumCameras]);
+      const std::vector<std::string>& camera_calibration_files);
 
   explicit RovioInterfaceImpl(const FilterConfiguration &filter_config);
   RovioInterfaceImpl(
       const FilterConfiguration &filter_config,
-      const CameraCalibration (
-          &camera_calibrations)[RovioStateImpl<FILTER>::kNumCameras]);
+      const std::vector<CameraCalibration>& camera_calibrations);
 
   virtual ~RovioInterfaceImpl() {}
 

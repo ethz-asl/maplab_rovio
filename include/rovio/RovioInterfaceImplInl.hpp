@@ -72,16 +72,17 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const std::string &filter_config_file,
-    const std::string (
-        &camera_calibration_files)[RovioStateImpl<FILTER>::kNumCameras])
+    const std::vector<std::string>& camera_calibration_files)
     : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
   CHECK(mpFilter_);
   CHECK(!filter_config_file.empty());
+  CHECK_EQ(camera_calibration_files.size(),
+           RovioStateImpl<FILTER>::kNumCameras);
 
   // Load filter configuratino from file.
   mpFilter_->readFromInfo(filter_config_file);
 
-  for (int camID = 0u; camID < RovioStateImpl<FILTER>::kNumCameras; ++camID) {
+  for (int camID = 0u; camID < camera_calibration_files.size(); ++camID) {
     const std::string &camera_calibration_file =
         camera_calibration_files[camID];
     if (!camera_calibration_file.empty()) {
@@ -90,6 +91,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
       // Use the default camera calibration paths specified in the filter config
       // file.
       // TODO(mfehr): Do we need to check if either one of them was successful?
+      LOG(FATAL);
     }
   }
 
@@ -114,10 +116,10 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const FilterConfiguration &filter_config,
-    const CameraCalibration (
-        &camera_calibrations)[RovioStateImpl<FILTER>::kNumCameras])
+    const std::vector<CameraCalibration>& camera_calibrations)
     : RovioInterfaceImpl(filter_config) {
   CHECK(mpFilter_);
+  CHECK_EQ(camera_calibrations.size(), RovioStateImpl<FILTER>::kNumCameras);
 
   // Override camera calibrations.
   mpFilter_->setCameraCalibrations(camera_calibrations);
