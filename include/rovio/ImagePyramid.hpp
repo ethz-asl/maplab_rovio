@@ -41,7 +41,7 @@ namespace rovio{
  *   @param imgIn - Input image.
  *   @param imgOut - Output image (halfsampled).
  */
-void halfSample(const cv::Mat& imgIn,cv::Mat& imgOut){
+inline void halfSample(const cv::Mat& imgIn,cv::Mat& imgOut){
   imgOut.create(imgIn.rows/2,imgIn.cols/2,imgIn.type());
   const int refStepIn = imgIn.step.p[0];
   const int refStepOut = imgOut.step.p[0];
