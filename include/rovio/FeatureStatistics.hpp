@@ -46,6 +46,8 @@ enum TrackingStatus{
 template<int nCam>
 class FeatureStatistics{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   double initTime_;  /**<Time of feature initialization.*/
   double currentTime_;  /**<Time of last feature measurement.*/
   int totCount_;  /**<Number of timesteps which have passed since feature initialization.*/

@@ -40,6 +40,7 @@
 #include "rovio/CoordinateTransform/LandmarkOutput.hpp"
 #include "rovio/CoordinateTransform/RovioOutput.hpp"
 #include "rovio/CoordinateTransform/YprOutput.hpp"
+#include "rovio/Memory.hpp"
 #include "rovio/RovioFilter.hpp"
 
 namespace rovio {
@@ -61,7 +62,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const std::string &filter_config_file)
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+    : RovioInterfaceImpl(aligned_shared<mtFilter>()) {
   CHECK(mpFilter_);
   CHECK(!filter_config_file.empty());
 
@@ -73,7 +74,7 @@ template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const std::string &filter_config_file,
     const std::vector<std::string>& camera_calibration_files)
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+    : RovioInterfaceImpl(aligned_shared<mtFilter>()) {
   CHECK(mpFilter_);
   CHECK(!filter_config_file.empty());
   CHECK_EQ(camera_calibration_files.size(),
@@ -101,7 +102,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const FilterConfiguration &filter_config)
-    : RovioInterfaceImpl(std::make_shared<mtFilter>()) {
+    : RovioInterfaceImpl(aligned_shared<mtFilter>()) {
   CHECK(mpFilter_);
 
   typedef boost::property_tree::ptree PropertyTree;
@@ -116,7 +117,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const FilterConfiguration &filter_config,
-    const std::vector<CameraCalibration>& camera_calibrations)
+    const Aligned<std::vector, CameraCalibration>& camera_calibrations)
     : RovioInterfaceImpl(filter_config) {
   CHECK(mpFilter_);
   CHECK_EQ(camera_calibrations.size(), RovioStateImpl<FILTER>::kNumCameras);

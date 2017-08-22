@@ -37,6 +37,8 @@ namespace rovio{
 
 class RobocentricFeatureElement: public LWF::ElementBase<RobocentricFeatureElement,RobocentricFeatureElement,3>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef LWF::ElementBase<RobocentricFeatureElement,RobocentricFeatureElement,3> Base;
   using typename Base::mtDifVec;
   using typename Base::mtGet;

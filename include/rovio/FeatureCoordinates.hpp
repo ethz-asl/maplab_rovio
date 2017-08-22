@@ -29,6 +29,8 @@
 #ifndef FEATURECOORDINATES_HPP_
 #define FEATURECOORDINATES_HPP_
 
+#include <Eigen/StdVector>
+
 #include "lightweight_filtering/common.hpp"
 #include "lightweight_filtering/State.hpp"
 #include <opencv2/features2d/features2d.hpp>

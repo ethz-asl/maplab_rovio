@@ -95,6 +95,8 @@ class StateAuxiliary: public LWF::AuxiliaryBase<StateAuxiliary<nMax,nLevels,patc
   QPD poseMeasRot_; /**<Groundtruth attitude measurement. qMI.*/
   Eigen::Vector3d poseMeasLin_; /**<Groundtruth position measurement. IrIM*/
   FeatureManager<nLevels,patchSize,nCam>* mpCurrentFeature_; /**<Pointer to active feature*/
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -118,6 +120,8 @@ LWF::ArrayElement<LWF::VectorElement<3>,nPose>,
 LWF::ArrayElement<LWF::QuaternionElement,nPose>,
 StateAuxiliary<nMax,nLevels,patchSize,nCam>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef LWF::State<
       LWF::TH_multiple_elements<LWF::VectorElement<3>,4>,
       LWF::QuaternionElement,
@@ -478,6 +482,8 @@ LWF::ArrayElement<LWF::VectorElement<3>,STATE::nMax_>,
 LWF::ArrayElement<LWF::VectorElement<3>,STATE::nPose_>,
 LWF::ArrayElement<LWF::VectorElement<3>,STATE::nPose_>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   using LWF::State<LWF::TH_multiple_elements<LWF::VectorElement<3>,5>,
       LWF::ArrayElement<LWF::VectorElement<3>,STATE::nCam_>,
       LWF::ArrayElement<LWF::VectorElement<3>,STATE::nCam_>,
@@ -529,6 +535,8 @@ LWF::ArrayElement<LWF::VectorElement<3>,STATE::nPose_>>{
 template<unsigned int nMax, int nLevels, int patchSize,int nCam,int nPose>
 class FilterState: public LWF::FilterState<State<nMax,nLevels,patchSize,nCam,nPose>,PredictionMeas,PredictionNoise<State<nMax,nLevels,patchSize,nCam,nPose>>,0>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   typedef LWF::FilterState<State<nMax,nLevels,patchSize,nCam,nPose>,PredictionMeas,PredictionNoise<State<nMax,nLevels,patchSize,nCam,nPose>>,0> Base;
   typedef typename Base::mtState mtState;  /**<Local Filter %State Type. \see LWF::FilterState*/
   using Base::state_;  /**<Filter State. \see LWF::FilterState*/

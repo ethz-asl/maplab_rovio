@@ -43,6 +43,7 @@
 #include "rovio/CoordinateTransform/RovioOutput.hpp"
 #include "rovio/CoordinateTransform/YprOutput.hpp"
 #include "rovio/FilterConfiguration.hpp"
+#include "rovio/Memory.hpp"
 #include "rovio/RovioFilter.hpp"
 #include "RovioInterfaceStatesImpl.hpp"
 
@@ -55,6 +56,8 @@ struct FilterInitializationState;
 template <typename FILTER>
 class RovioInterfaceImpl : public RovioInterface {
 public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   RovioInterfaceImpl(typename std::shared_ptr<FILTER> mpFilter);
 
   explicit RovioInterfaceImpl(const std::string &filter_config_file);
@@ -65,7 +68,7 @@ public:
   explicit RovioInterfaceImpl(const FilterConfiguration &filter_config);
   RovioInterfaceImpl(
       const FilterConfiguration &filter_config,
-      const std::vector<CameraCalibration>& camera_calibrations);
+      const Aligned<std::vector, CameraCalibration>& camera_calibrations);
 
   virtual ~RovioInterfaceImpl() {}
 
