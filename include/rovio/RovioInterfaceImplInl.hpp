@@ -117,7 +117,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     const FilterConfiguration &filter_config,
-    const Aligned<std::vector, CameraCalibration>& camera_calibrations)
+    const CameraCalibrationVector& camera_calibrations)
     : RovioInterfaceImpl(filter_config) {
   CHECK(mpFilter_);
   CHECK_EQ(camera_calibrations.size(), RovioStateImpl<FILTER>::kNumCameras);

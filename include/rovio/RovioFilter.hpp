@@ -198,7 +198,7 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
   /** \brief Sets the camera calibration for all cameras.
    */
   void setCameraCalibrations(
-      const Aligned<std::vector, CameraCalibration>& camera_calibrations) {
+      const CameraCalibrationVector& camera_calibrations) {
     CHECK_EQ(camera_calibrations.size(), mtState::nCam_);
     for (int camID = 0; camID < mtState::nCam_; camID++) {
       const CameraCalibration &camera_calibration = camera_calibrations[camID];
