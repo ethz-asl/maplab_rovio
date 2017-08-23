@@ -64,7 +64,7 @@ template<
   size_t kFeaturePatchSizePx
   > static RovioInterface* createRovioInterface(
     const FilterConfiguration& filter_config,
-    const std::vector<CameraCalibration>& camera_calibrations) {
+    const CameraCalibrationVector& camera_calibrations) {
   CHECK_EQ(camera_calibrations.size(), kNumCameras);
   typedef rovio::RovioFilter<
       rovio::FilterState<kMaxNumFeatures, kPyramidLevels, kFeaturePatchSizePx,

@@ -391,7 +391,9 @@ void RovioRosNode<FILTER>::imuCallback(
                       imu_msg->angular_velocity.z);
   const double time_s = imu_msg->header.stamp.toSec();
 
-  CHECK_NOTNULL(rovio_interface_)->processImuUpdate(acc, gyr, time_s);
+  constexpr bool kUpdateFilter = true;
+  CHECK_NOTNULL(rovio_interface_)->processImuUpdate(acc, gyr, time_s,
+                                                    kUpdateFilter);
 }
 
 template <typename FILTER>
