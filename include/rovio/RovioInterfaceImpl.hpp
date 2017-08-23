@@ -107,7 +107,7 @@ public:
   bool processVelocityUpdate(const Eigen::Vector3d &AvM, const double time_s);
 
   bool processImuUpdate(const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr,
-                        const double time_s);
+                        const double time_s, bool update_filter);
 
   bool processImageUpdate(const int camID, const cv::Mat &cv_img,
                           const double time_s);
@@ -131,6 +131,8 @@ public:
    */
   void setEnableFeatureUpdateOutput(const bool enable_feature_update);
   void setEnablePatchUpdateOutput(const bool get_patch_update);
+
+  bool isInitialized() const;
 
   /** \brief Tests the functionality of the rovio node.
    *
@@ -229,7 +231,7 @@ private:
   bool enable_feature_update_output_;
   bool enable_patch_update_output_;
 
-  std::recursive_mutex m_filter_;
+  mutable std::recursive_mutex m_filter_;
 };
 
 } // namespace rovio

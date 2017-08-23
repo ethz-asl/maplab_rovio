@@ -70,14 +70,16 @@ class RovioInterface {
 
   virtual bool processVelocityUpdate(const Eigen::Vector3d &AvM, const double time_s) = 0;
 
+  // If update_filter is false; the measurement will just be queued but the
+  // actual prediction is only applied before the next update is processed.
   virtual bool processImuUpdate(const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr,
-                        const double time_s) = 0;
+                                const double time_s, bool update_filter) = 0;
 
   virtual bool processImageUpdate(const int camID, const cv::Mat &cv_img,
-                          const double time_s) = 0;
+                                  const double time_s) = 0;
 
   virtual bool processGroundTruthUpdate(const Eigen::Vector3d &JrJV, const QPD &qJV,
-                                const double time_s) = 0;
+                                        const double time_s) = 0;
 
   virtual bool processGroundTruthOdometryUpdate(
       const Eigen::Vector3d &JrJV, const QPD &qJV,
@@ -90,6 +92,7 @@ class RovioInterface {
   virtual void setEnableFeatureUpdateOutput(const bool enable_feature_update) = 0;
   virtual void setEnablePatchUpdateOutput(const bool get_patch_update) = 0;
 
+  virtual bool isInitialized() const = 0;
   /** \brief Tests the functionality of the rovio node.
    *
    *  @todo debug with   doVECalibration = false and depthType = 0

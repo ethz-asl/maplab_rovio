@@ -186,94 +186,97 @@ bool RovioInterfaceImpl<FILTER>::processVelocityUpdate(
     const Eigen::Vector3d &AvM, const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
-  if (init_state_.isInitialized()) {
-    // Set velocity update.
-    velocityUpdateMeas_.vel() = AvM;
-    this->mpFilter_->template addUpdateMeas<2>(this->velocityUpdateMeas_,
-                                               time_s);
-
-    // Notify filter.
-    return updateFilter();
+  if (!init_state_.isInitialized()) {
+    return false;
   }
-  return false;
+
+  // Set velocity update.
+  velocityUpdateMeas_.vel() = AvM;
+  const bool measurement_accepted =
+      this->mpFilter_->template addUpdateMeas<2>(
+          this->velocityUpdateMeas_, time_s);
+  updateFilter();
+  return measurement_accepted;
 }
 
 template <typename FILTER>
-bool RovioInterfaceImpl<FILTER>::processImuUpdate(const Eigen::Vector3d &acc,
-                                                  const Eigen::Vector3d &gyr,
-                                                  const double time_s) {
+bool RovioInterfaceImpl<FILTER>::processImuUpdate(
+    const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr,
+    const double time_s, bool update_filter) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   predictionMeas_.template get<mtPredictionMeas::_acc>() = acc;
   predictionMeas_.template get<mtPredictionMeas::_gyr>() = gyr;
 
-  if (init_state_.isInitialized()) {
-    mpFilter_->addPredictionMeas(predictionMeas_, time_s);
+  if (!init_state_.isInitialized()) {
+    switch (init_state_.state_) {
+      case FilterInitializationState::State::WaitForInitExternalPose:
+        std::cout << "-- Filter: Initializing using external pose ..." << std::endl;
+        mpFilter_->resetWithPose(init_state_.WrWM_, init_state_.qMW_, time_s);
+        break;
+      case FilterInitializationState::State::WaitForInitUsingAccel:
+        std::cout << "-- Filter: Initializing using accel. measurement ..."
+                  << std::endl;
+        mpFilter_->resetWithAccelerometer(
+            predictionMeas_.template get<mtPredictionMeas::_acc>(), time_s);
+        break;
+      default:
+        std::cout << "Unhandeld initialization type." << std::endl;
+        // TODO(mfehr): Check what this actually does and what consequences it has
+        // for the ROS node.
+        abort();
+        break;
+    }
 
-    // Notify filter.
-    return updateFilter();
+    std::cout << std::setprecision(12);
+    std::cout << "-- Filter: Initialized at t = " << time_s << std::endl;
+    init_state_.state_ = FilterInitializationState::State::Initialized;
+    return true;
   }
+  const bool measurement_accepted =
+      mpFilter_->addPredictionMeas(predictionMeas_, time_s);
 
-  switch (init_state_.state_) {
-  case FilterInitializationState::State::WaitForInitExternalPose:
-    std::cout << "-- Filter: Initializing using external pose ..." << std::endl;
-    mpFilter_->resetWithPose(init_state_.WrWM_, init_state_.qMW_, time_s);
-    break;
-  case FilterInitializationState::State::WaitForInitUsingAccel:
-    std::cout << "-- Filter: Initializing using accel. measurement ..."
-              << std::endl;
-    mpFilter_->resetWithAccelerometer(
-        predictionMeas_.template get<mtPredictionMeas::_acc>(), time_s);
-    break;
-  default:
-    std::cout << "Unhandeld initialization type." << std::endl;
-    // TODO(mfehr): Check what this actually does and what consequences it has
-    // for the ROS node.
-    abort();
-    break;
+  if (update_filter) {
+    updateFilter();
   }
-
-  std::cout << std::setprecision(12);
-  std::cout << "-- Filter: Initialized at t = " << time_s << std::endl;
-  init_state_.state_ = FilterInitializationState::State::Initialized;
-
-  return false;
+  return measurement_accepted;
 }
 
 template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
                                                     const cv::Mat &cv_img,
                                                     const double time_s) {
-  std::lock_guard<std::recursive_mutex> lock(m_filter_);
-
   CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras)
       << "Invalid camID " << camID;
 
-  if (init_state_.isInitialized() && !cv_img.empty()) {
-    double msgTime = time_s;
-    if (msgTime != imgUpdateMeas_.template get<mtImgMeas::_aux>().imgTime_) {
-      for (int i = 0; i < RovioStateImpl<FILTER>::kNumCameras; i++) {
-        if (imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[i]) {
-          std::cout
-              << "    \033[31mFailed Synchronization of Camera Frames, t = "
-              << msgTime << "\033[0m" << std::endl;
-        }
-      }
-      imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
-    }
-    imgUpdateMeas_.template get<mtImgMeas::_aux>().pyr_[camID].computeFromImage(
-        cv_img, true);
-    imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[camID] = true;
-
-    if (imgUpdateMeas_.template get<mtImgMeas::_aux>().areAllValid()) {
-      mpFilter_->template addUpdateMeas<0>(imgUpdateMeas_, msgTime);
-      imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
-
-      // Notify filter.
-      return updateFilter();
-    }
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
+  if (!init_state_.isInitialized() || cv_img.empty()) {
+    return false;
   }
-  return false;
+
+  double msgTime = time_s;
+  if (msgTime != imgUpdateMeas_.template get<mtImgMeas::_aux>().imgTime_) {
+    for (int i = 0; i < RovioStateImpl<FILTER>::kNumCameras; i++) {
+      if (imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[i]) {
+        std::cout
+            << "    \033[31mFailed Synchronization of Camera Frames, t = "
+            << msgTime << "\033[0m" << std::endl;
+      }
+    }
+    imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
+  }
+  imgUpdateMeas_.template get<mtImgMeas::_aux>().pyr_[camID].computeFromImage(
+      cv_img, true);
+  imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[camID] = true;
+
+  bool measurement_accepted = false;
+  if (imgUpdateMeas_.template get<mtImgMeas::_aux>().areAllValid()) {
+    measurement_accepted =
+        mpFilter_->template addUpdateMeas<0>(imgUpdateMeas_, msgTime);
+      imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
+    updateFilter();
+  }
+  return measurement_accepted;
 }
 
 template <typename FILTER>
@@ -281,16 +284,17 @@ bool RovioInterfaceImpl<FILTER>::processGroundTruthUpdate(
     const Eigen::Vector3d &JrJV, const QPD &qJV, const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
-  if (init_state_.isInitialized()) {
-    poseUpdateMeas_.pos() = JrJV;
-    poseUpdateMeas_.att() = qJV.inverted();
-    mpFilter_->template addUpdateMeas<1>(poseUpdateMeas_,
-                                         time_s + mpPoseUpdate_->timeOffset_);
-
-    // Notify filter.
-    return updateFilter();
+  if (!init_state_.isInitialized()) {
+    return false;
   }
-  return false;
+
+  poseUpdateMeas_.pos() = JrJV;
+  poseUpdateMeas_.att() = qJV.inverted();
+  const bool measurement_accepted =
+      mpFilter_->template addUpdateMeas<1>(
+          poseUpdateMeas_, time_s + mpPoseUpdate_->timeOffset_);
+  updateFilter();
+  return measurement_accepted;
 }
 
 template <typename FILTER>
@@ -299,16 +303,18 @@ bool RovioInterfaceImpl<FILTER>::processGroundTruthOdometryUpdate(
     const Eigen::Matrix<double, 6, 6> &measuredCov, const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
-  if (init_state_.isInitialized()) {
-    poseUpdateMeas_.pos() = JrJV;
-    poseUpdateMeas_.att() = qJV.inverted();
-    poseUpdateMeas_.measuredCov() = measuredCov;
-    mpFilter_->template addUpdateMeas<1>(poseUpdateMeas_,
-                                         time_s + mpPoseUpdate_->timeOffset_);
-    // Notify filter.
-    return updateFilter();
+  if (!init_state_.isInitialized()) {
+    return false;
   }
-  return false;
+
+  poseUpdateMeas_.pos() = JrJV;
+  poseUpdateMeas_.att() = qJV.inverted();
+  poseUpdateMeas_.measuredCov() = measuredCov;
+  const bool measurement_accepted =
+      mpFilter_->template addUpdateMeas<1>(
+          poseUpdateMeas_, time_s + mpPoseUpdate_->timeOffset_);
+  updateFilter();
+  return measurement_accepted;
 }
 
 template <typename FILTER>
@@ -479,8 +485,6 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
     for (unsigned int i = 0u; i < RovioStateImpl<FILTER>::kMaxNumFeatures;
          ++i) {
       const bool featureIsValid = filterState.fsm_.isValid_[i];
-      featureIsValid;
-
       if (!featureIsValid) {
         continue;
       }
@@ -600,6 +604,11 @@ template <typename FILTER> void RovioInterfaceImpl<FILTER>::visualizeUpdate() {
                 << std::endl;
     }
   }
+}
+
+template <typename FILTER> bool RovioInterfaceImpl<FILTER>::isInitialized() const {
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
+  return init_state_.state_ == FilterInitializationState::State::Initialized;
 }
 
 template <typename FILTER> void RovioInterfaceImpl<FILTER>::makeTest() {
