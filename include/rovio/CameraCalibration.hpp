@@ -32,6 +32,8 @@
 #include <Eigen/Core>
 #include <yaml-cpp/yaml.h>
 
+#include "rovio/Memory.hpp"
+
 namespace rovio {
 
 /** \brief Distortion model of the camera.
@@ -118,6 +120,8 @@ struct CameraCalibration {
    */
   void loadCameraMatrix(const std::string &calibration_yaml_file);
 };
+
+typedef Aligned<std::vector, CameraCalibration> CameraCalibrationVector;
 
 } // namespace rovio
 

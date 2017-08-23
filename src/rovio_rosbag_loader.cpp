@@ -93,7 +93,7 @@ int main(int argc, char** argv){
 
   // Overwrite camera calibrations that are part of the filter configuration if
   // there is a ros parameter providing a different camera calibration file.
-  rovio::Aligned<std::vector, rovio::CameraCalibration> camera_calibrations(nCam_);
+  rovio::CameraCalibrationVector camera_calibrations(nCam_);
   for (unsigned int camID = 0; camID < nCam_; ++camID) {
     std::string camera_config;
     if (nh_private.getParam("camera" + std::to_string(camID)

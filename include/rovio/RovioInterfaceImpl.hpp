@@ -68,7 +68,7 @@ public:
   explicit RovioInterfaceImpl(const FilterConfiguration &filter_config);
   RovioInterfaceImpl(
       const FilterConfiguration &filter_config,
-      const Aligned<std::vector, CameraCalibration>& camera_calibrations);
+      const CameraCalibrationVector& camera_calibrations);
 
   virtual ~RovioInterfaceImpl() {}
 
