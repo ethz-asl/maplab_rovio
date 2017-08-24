@@ -99,10 +99,6 @@ int main(int argc, char** argv){
     if (nh_private.getParam("camera" + std::to_string(camID) + "_config",
                             camera_config)) {
       camera_calibrations[camID].loadFromFile(camera_config);
-
-      // TODO(mfehr): REMOVE THIS: not needed, just here for testing.
-      camera_calibrations[camID].getCameraExtrinsicsFromFilterConfiguration(
-          camID, filter_config);
     }
   }
 
