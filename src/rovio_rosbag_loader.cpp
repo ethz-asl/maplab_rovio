@@ -96,8 +96,8 @@ int main(int argc, char** argv){
   rovio::CameraCalibrationVector camera_calibrations(nCam_);
   for (unsigned int camID = 0; camID < nCam_; ++camID) {
     std::string camera_config;
-    if (nh_private.getParam("camera" + std::to_string(camID)
-                            + "_config", camera_config)) {
+    if (nh_private.getParam("camera" + std::to_string(camID) + "_config",
+                            camera_config)) {
       camera_calibrations[camID].loadFromFile(camera_config);
     }
   }

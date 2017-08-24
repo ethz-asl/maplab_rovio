@@ -54,7 +54,7 @@ void CameraCalibration::loadFromFile(const std::string& calibration_yaml_file) {
     std::cout << "ERROR: no camera Model detected!" << std::endl;
     return;
   }
-  hasCalibration_ = true;
+  hasIntrinsics_ = true;
 }
 
 void CameraCalibration::loadRadTanDistortion(

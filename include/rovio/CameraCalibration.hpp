@@ -30,8 +30,10 @@
 #define ROVIO_CAMERA_CALIBRATION_HPP_
 
 #include <Eigen/Core>
+#include <kindr/Core>
 #include <yaml-cpp/yaml.h>
 
+#include "rovio/FilterConfiguration.hpp"
 #include "rovio/Memory.hpp"
 
 namespace rovio {
@@ -69,9 +71,9 @@ struct CameraCalibration {
     loadFromFile(calibration_yaml_file);
   }
 
-  /** \brief Does this struct contain a calibration?
+  /** \brief Does this struct contain intrinsics and distortion parameter?
    * */
-  bool hasCalibration_ = false;
+  bool hasIntrinsics_ = false;
 
   /** \brief Camera intrinsics.
    * */
@@ -85,19 +87,52 @@ struct CameraCalibration {
    * */
   Eigen::VectorXd distortionParams_;
 
+  /** \brief Optional camera extrinsics. This information might also be
+   * contained in the rovio filter settings, however if they are set here, it
+   * will overwrite the existing settings.
+   * */
+  bool hasExtrinsics_ = false;
+  Eigen::Vector3d MrMC_;
+  kindr::RotationQuaternionPD qCM_;
+
   /** \brief Returns the size of the distortion_parameter vector.
    * */
   size_t getNumDistortionParam() {
     return NUM_DISTORTION_MODEL_PARAMS[static_cast<int>(distortionModel_)];
   }
 
-  /** \brief Loads and sets the distortion model and the corresponding
-   * distortion coefficients from yaml-file.
+  /** \brief Sets the camera extrinsics.
+   */
+  void setCameraExtrinsics(const Eigen::Vector3d &MrMC,
+                           const kindr::RotationQuaternionPD &qCM) {
+    hasExtrinsics_ = true;
+    MrMC_ = MrMC;
+    qCM_ = qCM;
+  }
+
+  /** \brief Sets the camera extrinsics based on the filter settings.
+   */
+  void getCameraExtrinsicsFromFilterConfiguration(
+      const int camID, const FilterConfiguration &filter_configuration) {
+    CHECK(filter_configuration.getqCM_xFromCamera(camID, &(qCM_.x())));
+    CHECK(filter_configuration.getqCM_yFromCamera(camID, &(qCM_.y())));
+    CHECK(filter_configuration.getqCM_zFromCamera(camID, &(qCM_.z())));
+    CHECK(filter_configuration.getqCM_wFromCamera(camID, &(qCM_.w())));
+
+    CHECK(filter_configuration.getMrMC_xFromCamera(camID, &(MrMC_.x())));
+    CHECK(filter_configuration.getMrMC_yFromCamera(camID, &(MrMC_.y())));
+    CHECK(filter_configuration.getMrMC_zFromCamera(camID, &(MrMC_.z())));
+
+    hasExtrinsics_ = true;
+  }
+
+  /** \brief Loads and sets intrinsics, the distortion model and the
+   * corresponding distortion coefficients from yaml-file.
    *
    *   @param filename - Path to the yaml-file, containing the distortion model
    * and distortion coefficient data.
    */
-  void loadFromFile(const std::string& calibration_yaml_file);
+  void loadFromFile(const std::string &calibration_yaml_file);
 
   /** \brief Loads and sets the distortion parameters {k1_, k2_, k3_, p1_, p2_}
    * for the Radtan distortion model from yaml-file.
