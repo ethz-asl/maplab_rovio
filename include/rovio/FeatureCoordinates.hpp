@@ -36,6 +36,7 @@
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include "rovio/Camera.hpp"
+#include "rovio/Memory.hpp"
 #include "rovio/FeatureDistance.hpp"
 
 namespace rovio{
@@ -58,28 +59,29 @@ static cv::Point2f vecToPoint2f(const Eigen::Vector2f& v){
 class FeatureCoordinates{
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   mutable cv::Point2f c_;  /**<Pixel coordinates of the feature.*/
   mutable bool valid_c_;  /**<Bool, indicating if the current feature pixel coordinates \ref c_ are valid.*/
   mutable LWF::NormalVectorElement nor_;  /**<Bearing vector, belonging to the feature.*/
   mutable bool valid_nor_;  /**<Bool, indicating if the current bearing vector \ref nor_ is valid.*/
   const Camera* mpCamera_;  /**<Pointer to the associated camera object.*/
-  Eigen::Matrix2d pixelCov_;  /**<Estimated covariance of pixel coordinates.*/
-  Eigen::Vector2d eigenVector1_;  /**<Estimated eigenvector of major uncertainty axis.*/
-  Eigen::Vector2d eigenVector2_;  /**<Estimated eigenvector of minor uncertainty axis.*/
+  Eigen::Matrix<double, 2, 2, Eigen::DontAlign> pixelCov_;  /**<Estimated covariance of pixel coordinates.*/
+  Eigen::Matrix<double, 2, 1, Eigen::DontAlign> eigenVector1_;  /**<Estimated eigenvector of major uncertainty axis.*/
+  Eigen::Matrix<double, 2, 1, Eigen::DontAlign> eigenVector2_;  /**<Estimated eigenvector of minor uncertainty axis.*/
   double sigma1_;  /**<Standard deviation in the direction of the major axis of the uncertainty ellipse belonging to \ref c_.*/
   double sigma2_;  /**<Standard deviation in the direction of the semi-major axis of the uncertainty ellipse belonging to \ref c_.*/
   double sigmaAngle_; /**<Angle between the x-axis and the major axis of the uncertainty ellipse belonging to \ref c_.*/
-  mutable Eigen::EigenSolver<Eigen::Matrix2d> es_; /**<Solver for computing the geometry of the pixel uncertainty.*/
+  mutable Eigen::EigenSolver<Eigen::Matrix<double, 2, 2, Eigen::DontAlign>> es_; /**<Solver for computing the geometry of the pixel uncertainty.*/
   int camID_; /**<Camera ID.*/
 
-  mutable Eigen::Matrix2f warp_c_;  /**<Transformation matrix for pixel coordinates (from current patch to the current frame).*/
+  mutable Eigen::Matrix<float, 2, 2, Eigen::DontAlign> warp_c_;  /**<Transformation matrix for pixel coordinates (from current patch to the current frame).*/
   mutable bool valid_warp_c_;  /**<Specifies if the transformation \ref warp_c_ is valid.*/
-  mutable Eigen::Matrix2d warp_nor_;  /**<Transformation matrix for bearing vector (from current patch to the current frame).*/
+  mutable Eigen::Matrix<double, 2, 2, Eigen::DontAlign> warp_nor_;  /**<Transformation matrix for bearing vector (from current patch to the current frame).*/
   mutable bool valid_warp_nor_;  /**<Specifies if the transformation \ref warp_nor_ is valid.*/
   bool isWarpIdentity_; /**<Is the warping equal to identity (on pixel level, warp_c_).*/
   bool trackWarping_; /**<Should the warping be tracked.*/
-  mutable Eigen::Matrix2d matrix2dTemp_; /**<Temporary Matrix2d.*/
-  mutable Eigen::FullPivLU<Eigen::Matrix2d> fullPivLU2d_; /**<Full pivot LU decomposition for rank and inverse computation of Matrix2d.*/
+  mutable Eigen::Matrix<double, 2, 2> matrix2dTemp_; /**<Temporary Matrix2d.*/
+  mutable Eigen::FullPivLU<Eigen::Matrix<double, 2, 2, Eigen::DontAlign>> fullPivLU2d_; /**<Full pivot LU decomposition for rank and inverse computation of Matrix2d.*/
   mutable LWF::NormalVectorElement norTemp_; /**<Temporary normal vector.*/
 
   /** \brief Constructor
@@ -145,7 +147,7 @@ class FeatureCoordinates{
    *  Note: Validity can be checked with \ref com_c
    *  @return The Jacobian of the pixel output w.r.t. the bearing vector
    */
-  Eigen::Matrix<double,2,2> get_J() const;
+  Eigen::Matrix2d get_J() const;
 
   /** \brief Sets the feature pixel coordinates \ref c_ and declares them valid (\ref valid_c_ = true).
    *
@@ -194,9 +196,11 @@ class FeatureCoordinates{
    * Note: Validity can be checked with com_warp_nor
    * @param x - x coordinate of corner
    * @param y - y coordinate of corner
-   * @return the corner coordinate
+   * @param cOut - the corner coordinate
    */
-  FeatureCoordinates get_patchCorner(const double x, const double y) const;
+  void get_patchCorner(const double x, const double y, FeatureCoordinates& cOut) const;
+
+  void get_patchCorner_c(const double x, const double y, cv::Point2f& cOut) const;
 
   /** \brief Set the warping matrix for pixel coordinates \ref warp_c_.
    *
@@ -307,7 +311,7 @@ class FeatureCoordinates{
 
 // Convenience type to help deal with alignment issues
 // https://eigen.tuxfamily.org/dox-devel/group__TopicStlContainers.html
-using FeatureCoordinatesVec = std::vector<FeatureCoordinates, Eigen::aligned_allocator<FeatureCoordinates>>;
+using FeatureCoordinatesVec = Aligned<std::vector, FeatureCoordinates>; /*std::vector<FeatureCoordinates, Eigen::aligned_allocator<FeatureCoordinates>>*/;
 
 }
 

@@ -928,7 +928,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
             }
           }
         }
-        // Visualize Quatlity
+        // Visualize Quality.
         if(visualizePatches_){
           for(int j=0;j<mtState::nCam_;j++){
             // Local Quality
@@ -995,7 +995,9 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         const double t1 = (double) cv::getTickCount();
         candidates_.clear();
         for(int l=endLevel_;l<=startLevel_;l++){
+          std::cout << "level " << l << std::endl;
           meas.aux().pyr_[camID].detectFastCorners(candidates_,l,fastDetectionThreshold_);
+          std::cout << "end level " << l << std::endl;
         }
         const double t2 = (double) cv::getTickCount();
         if(verbose_) std::cout << "== Detected " << candidates_.size() << " on levels " << endLevel_ << "-" << startLevel_ << " (" << (t2-t1)/cv::getTickFrequency()*1000 << " ms)" << std::endl;

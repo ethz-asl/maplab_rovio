@@ -137,7 +137,8 @@ class MultilevelPatchAlignment {
       mlpError_.isValidPatch_[l] = false;
     }
     for(int l = l1; l <= l2; l++){
-      const auto c_level = pyr.levelTranformCoordinates(c,0,l);
+      FeatureCoordinates c_level;
+      pyr.levelTranformCoordinates(c, 0, l, c_level);
       if(mp.isValidPatch_[l] && extractedPatches_[l].isPatchInFrame(pyr.imgs_[l],c_level,false)){
         mp.patches_[l].computeGradientParameters();
         if(mp.patches_[l].validGradientParameters_){

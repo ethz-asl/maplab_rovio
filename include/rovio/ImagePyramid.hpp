@@ -67,6 +67,8 @@ inline void halfSample(const cv::Mat& imgIn,cv::Mat& imgOut){
 template<int n_levels>
 class ImagePyramid{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   ImagePyramid(){};
   virtual ~ImagePyramid(){};
   cv::Mat imgs_[n_levels]; /**<Array, containing the pyramid images.*/
@@ -108,24 +110,28 @@ class ImagePyramid{
    *
    * @Note Invalidates camera and bearing vector, since the camera model is not valid for arbitrary image levels.
    * @param cIn        - Input coordinates
-   * @param cOut       - Output coordinates
+   * @param cOut       - Output coordinates = corresponding pixel coordinates on pyramid level l2.
    * @param l1         - Input pyramid level.
    * @param l2         - Output pyramid level.
-   * @return the corresponding pixel coordinates on pyramid level l2.
    */
-  FeatureCoordinates levelTranformCoordinates(const FeatureCoordinates& cIn, const int l1, const int l2) const{
+  void levelTranformCoordinates(const FeatureCoordinates& cIn, const int l1, const int l2, FeatureCoordinates& cOut) const{
     assert(l1<n_levels && l2<n_levels && l1>=0 && l2>=0);
 
-    FeatureCoordinates cOut;
+    std::cout << "e"<< std::endl;
     cOut.set_c((centers_[l1]-centers_[l2])*pow(0.5,l2)+cIn.get_c()*pow(0.5,l2-l1));
+
+    std::cout << "f"<< std::endl;
     if(cIn.mpCamera_ != nullptr){
+      std::cout << "g"<< std::endl;
       if(cIn.com_warp_c()){
+        std::cout << "h"<< std::endl;
         cOut.set_warp_c(cIn.get_warp_c());
       }
     }
+
+    std::cout << "i"<< std::endl;
     cOut.camID_ = -1;
     cOut.mpCamera_ = nullptr;
-    return cOut;
   }
 
   /** \brief Extract FastCorner coordinates
@@ -145,9 +151,17 @@ class ImagePyramid{
     feature_detector_fast->detect(imgs_[l], keypoints);
 #endif
     candidates.reserve(candidates.size()+keypoints.size());
+    std::cout << "detectFastCorners"<< std::endl;
     for (auto it = keypoints.cbegin(), end = keypoints.cend(); it != end; ++it) {
-      candidates.push_back(
-              levelTranformCoordinates(FeatureCoordinates(cv::Point2f(it->pt.x, it->pt.y)),l,0));
+      std::cout << "a"<< std::endl;
+      FeatureCoordinates cIn(cv::Point2f(it->pt.x, it->pt.y));
+      std::cout << "b"<< std::endl;
+
+      FeatureCoordinates cOut;
+      std::cout << "c"<< std::endl;
+      levelTranformCoordinates(cIn, l, 0, cOut);
+      std::cout << "d"<< std::endl;
+      candidates.push_back(cOut);
     }
   }
 };

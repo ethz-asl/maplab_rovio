@@ -36,6 +36,8 @@ namespace rovio {
 
 class RovioInterface {
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   virtual ~RovioInterface() = 0;
 
   virtual bool getState(const bool get_feature_update, const bool get_patch_update,

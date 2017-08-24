@@ -249,6 +249,8 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
   CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras)
       << "Invalid camID " << camID;
 
+  imshow("window", cv_img);
+
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   if (!init_state_.isInitialized() || cv_img.empty()) {
     return false;

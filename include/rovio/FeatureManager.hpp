@@ -32,6 +32,7 @@
 #include "rovio/FeatureCoordinates.hpp"
 #include "rovio/FeatureDistance.hpp"
 #include "rovio/FeatureStatistics.hpp"
+#include "rovio/Memory.hpp"
 #include "rovio/MultilevelPatch.hpp"
 #include "rovio/MultiCamera.hpp"
 #include "algorithm"
@@ -136,7 +137,7 @@ class FeatureSetManager{
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  FeatureManager<nLevels,patchSize,nCam> features_[nMax];  /**<Array of features.*/
+  alignas(32) FeatureManager<nLevels,patchSize,nCam> features_[nMax];  /**<Array of features.*/
   bool isValid_[nMax];  /**<Array, defining if there is a valid MultilevelPatchFeature at the considered array index. */
   int maxIdx_;  /**<Current maximum array/set index. Number of MultilevelPatchFeature, which have already been inserted into the set. */
   const MultiCamera<nCam>* mpMultiCamera_;
@@ -289,7 +290,7 @@ class FeatureSetManager{
                                                      const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
                                                      const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore){
     std::unordered_set<unsigned int> newFeatureIDs;
-    std::vector<MultilevelPatch<nLevels,patchSize>> multilevelPatches;
+    Aligned<std::vector, MultilevelPatch<nLevels,patchSize>> multilevelPatches;
     multilevelPatches.reserve(candidates.size());
 
     // Create MultilevelPatches from the candidates list and compute their Shi-Tomasi Score.
@@ -397,7 +398,7 @@ class FeatureSetManager{
     return std::get<1>(mp1).s_ > std::get<1>(mp2).s_;
   }
 
-  std::unordered_set<unsigned int> addBestCandidatesNew(const std::vector<FeatureCoordinates>& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
+  std::unordered_set<unsigned int> addBestCandidatesNew(const Aligned<std::vector, FeatureCoordinates>& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
                                                        const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
                                                        const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore){
       std::unordered_set<unsigned int> newFeatureIDs;

@@ -52,6 +52,8 @@ namespace rovio {
 template<unsigned int nMax, int nLevels, int patchSize, int nCam>
 class StateAuxiliary: public LWF::AuxiliaryBase<StateAuxiliary<nMax,nLevels,patchSize,nCam>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   /** \brief Constructor
    */
   StateAuxiliary(){
@@ -82,10 +84,10 @@ class StateAuxiliary: public LWF::AuxiliaryBase<StateAuxiliary<nMax,nLevels,patc
   V3D MwWMest_;  /**<Estimated rotational rate.*/
   V3D MwWMmeas_;  /**<Measured rotational rate.*/
   M3D wMeasCov_;  /**<Covariance of the measured rotational rate.*/
-  Eigen::Matrix2d A_red_[nMax];  /**<Reduced Jacobian of the pixel intensities w.r.t. to pixel coordinates, needed for the multilevel patch alignment. \see rovio::MultilevelPatchFeature::A_ \see rovio::getLinearAlignEquationsReduced()*/
-  Eigen::Vector2d b_red_[nMax];  /**<Reduced intensity errors, needed for the multilevel patch alignment. \see rovio::MultilevelPatchFeature::A_ \see rovio::getLinearAlignEquationsReduced()*/
-  FeatureCoordinates feaCoorMeas_[nMax];  /**<Intermediate variable for storing the measured feature location.*/
-  QPD qCM_[nCam];  /**<Quaternion Array: IMU coordinates to camera coordinates.*/
+  alignas(32) Eigen::Matrix2d A_red_[nMax];  /**<Reduced Jacobian of the pixel intensities w.r.t. to pixel coordinates, needed for the multilevel patch alignment. \see rovio::MultilevelPatchFeature::A_ \see rovio::getLinearAlignEquationsReduced()*/
+  alignas(32) Eigen::Vector2d b_red_[nMax];  /**<Reduced intensity errors, needed for the multilevel patch alignment. \see rovio::MultilevelPatchFeature::A_ \see rovio::getLinearAlignEquationsReduced()*/
+  alignas(32) FeatureCoordinates feaCoorMeas_[nMax];  /**<Intermediate variable for storing the measured feature location.*/
+  alignas(32) QPD qCM_[nCam];  /**<Quaternion Array: IMU coordinates to camera coordinates.*/
   V3D MrMC_[nCam];  /**<Position Vector Array: Vectors pointing from IMU to the camera frame, expressed in the IMU frame.*/
   bool doVECalibration_;  /**<Do Camera-IMU extrinsic parameter calibration?*/
   int activeFeature_;  /**< Active Feature ID. ID of the currently updated feature. Needed in the image update procedure.*/
@@ -95,8 +97,6 @@ class StateAuxiliary: public LWF::AuxiliaryBase<StateAuxiliary<nMax,nLevels,patc
   QPD poseMeasRot_; /**<Groundtruth attitude measurement. qMI.*/
   Eigen::Vector3d poseMeasLin_; /**<Groundtruth position measurement. IrIM*/
   FeatureManager<nLevels,patchSize,nCam>* mpCurrentFeature_; /**<Pointer to active feature*/
-
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -552,9 +552,9 @@ class FilterState: public LWF::FilterState<State<nMax,nLevels,patchSize,nCam,nPo
   int drawPS_;  /**<Size of patch with border for drawing.*/
   double imgTime_;        /**<Time of the last image, which was processed.*/
   int imageCounter_;      /**<Total number of images, used so far for updates. Same as total number of update steps.*/
-  ImagePyramid<nLevels> prevPyr_[nCam]; /**<Previous image pyramid.*/
+  alignas(32) ImagePyramid<nLevels> prevPyr_[nCam]; /**<Previous image pyramid.*/
   bool plotPoseMeas_; /**<Should the pose measurement be plotted.*/
-  mutable MultilevelPatch<nLevels,patchSize> mlpErrorLog_[nMax];  /**<Multilevel patch containing log of error.*/
+  mutable alignas(32) MultilevelPatch<nLevels,patchSize> mlpErrorLog_[nMax];  /**<Multilevel patch containing log of error.*/
 
   /** \brief Constructor
    */

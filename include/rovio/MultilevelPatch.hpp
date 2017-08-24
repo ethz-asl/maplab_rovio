@@ -191,7 +191,8 @@ class MultilevelPatch{
    */
   static bool isMultilevelPatchInFrame(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
     if(!c.isInFront() || !c.com_warp_c()) return false;
-    const auto coorTemp = pyr.levelTranformCoordinates(c,0,l);
+    FeatureCoordinates coorTemp;
+    pyr.levelTranformCoordinates(c,0,l, coorTemp);
     return Patch<patchSize>::isPatchInFrame(pyr.imgs_[l],coorTemp,withBorder);
   }
 
@@ -205,7 +206,8 @@ class MultilevelPatch{
    */
   void extractMultilevelPatchFromImage(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
     for(unsigned int i=0;i<=l;i++){
-      const auto coorTemp = pyr.levelTranformCoordinates(c,0,i);
+      FeatureCoordinates coorTemp;
+      pyr.levelTranformCoordinates(c,0,i, coorTemp);
       isValidPatch_[i] = true;
       patches_[i].extractPatchFromImage(pyr.imgs_[i],coorTemp,withBorder);
     }

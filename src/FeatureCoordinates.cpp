@@ -72,7 +72,7 @@ namespace rovio{
     return nor_;
   }
 
-  Eigen::Matrix<double,2,2> FeatureCoordinates::get_J() const{
+  Eigen::Matrix2d FeatureCoordinates::get_J() const{
     assert(mpCamera_ != nullptr);
     if(!mpCamera_->bearingToPixel(get_nor(),c_,matrix2dTemp_)){
       matrix2dTemp_.setZero();
@@ -140,13 +140,20 @@ namespace rovio{
     return warp_nor_;
   }
 
-  FeatureCoordinates FeatureCoordinates::get_patchCorner(const double x, const double y) const{
-    FeatureCoordinates temp; // TODO: avoid temp
+  void FeatureCoordinates::get_patchCorner(const double x, const double y, FeatureCoordinates& cOut) const {
     get_nor().boxPlus(get_warp_nor()*Eigen::Vector2d(x,y),norTemp_);
-    temp.set_nor(norTemp_);
-    temp.mpCamera_ = mpCamera_;
-    temp.camID_ = camID_;
-    return temp;
+    cOut.set_nor(norTemp_);
+    cOut.mpCamera_ = mpCamera_;
+    cOut.camID_ = camID_;
+  }
+
+  void FeatureCoordinates::get_patchCorner_c(const double x, const double y, cv::Point2f& cOut) const {
+    FeatureCoordinates fcoords;
+    get_nor().boxPlus(get_warp_nor()*Eigen::Vector2d(x,y),norTemp_);
+    fcoords.set_nor(norTemp_);
+    fcoords.mpCamera_ = mpCamera_;
+    fcoords.camID_ = camID_;
+    cOut = fcoords.get_c();
   }
 
   void FeatureCoordinates::set_warp_c(const Eigen::Matrix2f& warp_c){
