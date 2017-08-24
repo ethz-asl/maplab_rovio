@@ -71,7 +71,7 @@ struct CameraCalibration {
     loadFromFile(calibration_yaml_file);
   }
 
-  /** \brief Does this struct contain a calibration?
+  /** \brief Does this struct contain intrinsics and distortion parameter?
    * */
   bool hasIntrinsics_ = false;
 
