@@ -29,6 +29,7 @@
 #ifndef ROVIO_FILTER_CONFIGURATION_HPP_
 #define ROVIO_FILTER_CONFIGURATION_HPP_
 
+#include <glog/logging.h>
 #include <string>
 
 #include <boost/property_tree/info_parser.hpp>
@@ -61,7 +62,7 @@ struct FilterConfiguration : public boost::property_tree::ptree {
     return get(#settings_string, default_value);                               \
   }                                                                            \
                                                                                \
-  inline bool get##name(data_type *value_ptr) {                                \
+  inline bool get##name(data_type *value_ptr) const {                          \
     CHECK_NOTNULL(value_ptr);                                                  \
     try {                                                                      \
       *value_ptr = get<data_type>(#settings_string);                           \
@@ -75,7 +76,39 @@ struct FilterConfiguration : public boost::property_tree::ptree {
     put(#settings_string, value);                                              \
   }
 
+#define CAMERA_GETTER_AND_SETTER(name, camera_variable_string, data_type)      \
+                                                                               \
+  inline bool get##name##FromCamera(const int camID, data_type *value_ptr)     \
+      const {                                                                  \
+    CHECK_NOTNULL(value_ptr);                                                  \
+                                                                               \
+    const std::string value_key =                                              \
+        "Camera" + std::to_string(camID) + "." + #camera_variable_string;      \
+    try {                                                                      \
+      *value_ptr = get<data_type>(value_key);                                  \
+    } catch (...) {                                                            \
+      LOG(ERROR) << "Unable to find camera variable at " << value_key;         \
+      return false;                                                            \
+    }                                                                          \
+    return true;                                                               \
+  }                                                                            \
+                                                                               \
+  inline void set##name##ForCamera(const int camID, const data_type &value) {  \
+    const std::string value_key =                                              \
+        "Camera" + std::to_string(camID) + "." + #camera_variable_string;      \
+    put(value_key, value);                                                     \
+  }
+
   GETTER_AND_SETTER(DoVisualization, PoseUpdate.doVisualization, bool);
+
+  CAMERA_GETTER_AND_SETTER(qCM_x, qCM_x, double);
+  CAMERA_GETTER_AND_SETTER(qCM_y, qCM_y, double);
+  CAMERA_GETTER_AND_SETTER(qCM_z, qCM_z, double);
+  CAMERA_GETTER_AND_SETTER(qCM_w, qCM_w, double);
+
+  CAMERA_GETTER_AND_SETTER(MrMC_x, MrMC_x, double);
+  CAMERA_GETTER_AND_SETTER(MrMC_y, MrMC_y, double);
+  CAMERA_GETTER_AND_SETTER(MrMC_z, MrMC_z, double);
 };
 
 } // namespace rovio

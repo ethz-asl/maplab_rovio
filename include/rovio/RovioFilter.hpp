@@ -197,13 +197,18 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
 
   /** \brief Sets the camera calibration for all cameras.
    */
-  void setCameraCalibrations(
-      const CameraCalibrationVector& camera_calibrations) {
+  void
+  setCameraCalibrations(const CameraCalibrationVector &camera_calibrations) {
     CHECK_EQ(camera_calibrations.size(), mtState::nCam_);
     for (int camID = 0; camID < mtState::nCam_; camID++) {
       const CameraCalibration &camera_calibration = camera_calibrations[camID];
-      if (camera_calibration.hasCalibration_) {
+      if (camera_calibration.hasIntrinsics_) {
         multiCamera_.cameras_[camID].setCalibration(camera_calibration);
+      }
+      // Set camera extrinsics if available.
+      if (camera_calibration.hasExtrinsics_) {
+        init_.state_.MrMC(camID) = camera_calibration.MrMC_;
+        init_.state_.qCM(camID) = camera_calibration.qCM_;
       }
     }
   }
@@ -211,10 +216,11 @@ class RovioFilter:public LWF::FilterBase<ImuPrediction<FILTERSTATE>,
   /** \brief Destructor
    */
   virtual ~RovioFilter(){};
-//  void resetToImuPose(V3D WrWM, QPD qMW, double t = 0.0){
-//    init_.state_.initWithImuPose(WrWM,qMW);
-//    reset(t);
-//  }
+
+ void resetToImuPose(V3D WrWM, QPD qMW, double t = 0.0){
+   init_.initWithImuPose(WrWM,qMW);
+   reset(t);
+ }
 
   /** \brief Resets the filter with an accelerometer measurement.
    *
