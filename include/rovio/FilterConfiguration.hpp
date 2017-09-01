@@ -57,11 +57,9 @@ struct FilterConfiguration : public boost::property_tree::ptree {
   }
 
 #define GETTER_AND_SETTER(name, settings_string, data_type)                    \
-                                                                               \
   inline data_type get##name(const data_type &default_value) {                 \
     return get(#settings_string, default_value);                               \
   }                                                                            \
-                                                                               \
   inline bool get##name(data_type *value_ptr) const {                          \
     CHECK_NOTNULL(value_ptr);                                                  \
     try {                                                                      \
@@ -71,7 +69,6 @@ struct FilterConfiguration : public boost::property_tree::ptree {
     }                                                                          \
     return true;                                                               \
   }                                                                            \
-                                                                               \
   inline void set##name(const data_type &value) {                              \
     put(#settings_string, value);                                              \
   }
@@ -101,14 +98,31 @@ struct FilterConfiguration : public boost::property_tree::ptree {
 
   GETTER_AND_SETTER(DoVisualization, PoseUpdate.doVisualization, bool);
 
+  // Camera extrinsics.
   CAMERA_GETTER_AND_SETTER(qCM_x, qCM_x, double);
   CAMERA_GETTER_AND_SETTER(qCM_y, qCM_y, double);
   CAMERA_GETTER_AND_SETTER(qCM_z, qCM_z, double);
   CAMERA_GETTER_AND_SETTER(qCM_w, qCM_w, double);
-
   CAMERA_GETTER_AND_SETTER(MrMC_x, MrMC_x, double);
   CAMERA_GETTER_AND_SETTER(MrMC_y, MrMC_y, double);
   CAMERA_GETTER_AND_SETTER(MrMC_z, MrMC_z, double);
+
+  // IMU prediction noise.
+  GETTER_AND_SETTER(AccSigmaX, Prediction.PredictionNoise.pos_0, double);
+  GETTER_AND_SETTER(AccSigmaY, Prediction.PredictionNoise.pos_1, double);
+  GETTER_AND_SETTER(AccSigmaZ, Prediction.PredictionNoise.pos_2, double);
+  GETTER_AND_SETTER(AccBiasSigmaX, Prediction.PredictionNoise.acb_0, double);
+  GETTER_AND_SETTER(AccBiasSigmaY, Prediction.PredictionNoise.acb_1, double);
+  GETTER_AND_SETTER(AccBiasSigmaZ, Prediction.PredictionNoise.acb_2, double);
+  GETTER_AND_SETTER(GyroSigmaX, Prediction.PredictionNoise.att_0, double);
+  GETTER_AND_SETTER(GyroSigmaY, Prediction.PredictionNoise.att_1, double);
+  GETTER_AND_SETTER(GyroSigmaZ, Prediction.PredictionNoise.att_2, double);
+  GETTER_AND_SETTER(GyroBiasSigmaX, Prediction.PredictionNoise.gyb_0, double);
+  GETTER_AND_SETTER(GyroBiasSigmaY, Prediction.PredictionNoise.gyb_1, double);
+  GETTER_AND_SETTER(GyroBiasSigmaZ, Prediction.PredictionNoise.gyb_2, double);
+  GETTER_AND_SETTER(VelSigmaX, Prediction.PredictionNoise.vel_0, double);
+  GETTER_AND_SETTER(VelSigmaY, Prediction.PredictionNoise.vel_1, double);
+  GETTER_AND_SETTER(VelSigmaZ, Prediction.PredictionNoise.vel_2, double);
 };
 
 } // namespace rovio
