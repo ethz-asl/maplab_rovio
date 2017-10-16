@@ -96,6 +96,7 @@ struct FilterConfiguration : public boost::property_tree::ptree {
     put(value_key, value);                                                     \
   }
 
+  GETTER_AND_SETTER(DoFrameVisualization, ImgUpdate.doFrameVisualisation, bool);
   GETTER_AND_SETTER(DoVisualization, PoseUpdate.doVisualization, bool);
 
   // Camera extrinsics.
