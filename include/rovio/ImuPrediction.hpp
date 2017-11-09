@@ -287,7 +287,7 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
   bool detectInertialMotion(const mtState& state, const mtMeas& meas) const{
     const V3D imuRor = meas.template get<mtMeas::_gyr>()-state.gyb();
     const V3D imuAcc = meas.template get<mtMeas::_acc>()-state.acb()+state.qWM().inverseRotate(g_);
-    return (imuRor.norm() > inertialMotionRorTh_) | (imuAcc.norm() > inertialMotionAccTh_);
+    return (imuRor.norm() > inertialMotionRorTh_) || (imuAcc.norm() > inertialMotionAccTh_);
   }
 };
 
