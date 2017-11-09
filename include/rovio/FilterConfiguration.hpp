@@ -109,21 +109,30 @@ struct FilterConfiguration : public boost::property_tree::ptree {
   CAMERA_GETTER_AND_SETTER(MrMC_z, MrMC_z, double);
 
   // IMU prediction noise.
-  GETTER_AND_SETTER(AccSigmaX, Prediction.PredictionNoise.pos_0, double);
-  GETTER_AND_SETTER(AccSigmaY, Prediction.PredictionNoise.pos_1, double);
-  GETTER_AND_SETTER(AccSigmaZ, Prediction.PredictionNoise.pos_2, double);
-  GETTER_AND_SETTER(AccBiasSigmaX, Prediction.PredictionNoise.acb_0, double);
-  GETTER_AND_SETTER(AccBiasSigmaY, Prediction.PredictionNoise.acb_1, double);
-  GETTER_AND_SETTER(AccBiasSigmaZ, Prediction.PredictionNoise.acb_2, double);
-  GETTER_AND_SETTER(GyroSigmaX, Prediction.PredictionNoise.att_0, double);
-  GETTER_AND_SETTER(GyroSigmaY, Prediction.PredictionNoise.att_1, double);
-  GETTER_AND_SETTER(GyroSigmaZ, Prediction.PredictionNoise.att_2, double);
-  GETTER_AND_SETTER(GyroBiasSigmaX, Prediction.PredictionNoise.gyb_0, double);
-  GETTER_AND_SETTER(GyroBiasSigmaY, Prediction.PredictionNoise.gyb_1, double);
-  GETTER_AND_SETTER(GyroBiasSigmaZ, Prediction.PredictionNoise.gyb_2, double);
-  GETTER_AND_SETTER(VelSigmaX, Prediction.PredictionNoise.vel_0, double);
-  GETTER_AND_SETTER(VelSigmaY, Prediction.PredictionNoise.vel_1, double);
-  GETTER_AND_SETTER(VelSigmaZ, Prediction.PredictionNoise.vel_2, double);
+  // Covariance parameter of attitude prediction [rad^2/s].
+  GETTER_AND_SETTER(
+      GyroCovarianceX, Prediction.PredictionNoise.att_0, double);
+  GETTER_AND_SETTER(
+      GyroCovarianceY, Prediction.PredictionNoise.att_1, double);
+  GETTER_AND_SETTER(GyroCovarianceZ, Prediction.PredictionNoise.att_2, double);
+  // Covariance parameter of gyroscope bias prediction [rad^2/s^3].
+  GETTER_AND_SETTER(
+      GyroBiasCovarianceX, Prediction.PredictionNoise.gyb_0, double);
+  GETTER_AND_SETTER(
+      GyroBiasCovarianceY, Prediction.PredictionNoise.gyb_1, double);
+  GETTER_AND_SETTER(
+      GyroBiasCovarianceZ, Prediction.PredictionNoise.gyb_2, double);
+  // Covariance parameter of velocity prediction [m^2/s^3].
+  GETTER_AND_SETTER(AccCovarianceX, Prediction.PredictionNoise.vel_0, double);
+  GETTER_AND_SETTER(AccCovarianceY, Prediction.PredictionNoise.vel_1, double);
+  GETTER_AND_SETTER(AccCovarianceZ, Prediction.PredictionNoise.vel_2, double);
+  // Covariance parameter of accelerometer bias prediction [m^2/s^5].
+  GETTER_AND_SETTER(
+      AccBiasCovarianceX, Prediction.PredictionNoise.acb_0, double);
+  GETTER_AND_SETTER(
+      AccBiasCovarianceY, Prediction.PredictionNoise.acb_1, double);
+  GETTER_AND_SETTER(
+      AccBiasCovarianceZ, Prediction.PredictionNoise.acb_2, double);
 };
 
 } // namespace rovio
