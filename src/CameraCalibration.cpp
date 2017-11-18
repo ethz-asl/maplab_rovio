@@ -86,6 +86,17 @@ void CameraCalibration::loadEquidistDistortion(
   distortionParams_[3] = config[DIST_COEFFS][DATA][3].as<double>();
 }
 
+void CameraCalibration::loadFovDistortion(
+    const std::string &calibration_yaml_file) {
+  CHECK(!calibration_yaml_file.empty());
+  YAML::Node config = YAML::LoadFile(calibration_yaml_file);
+
+  distortionModel_ = DistortionModel::FOV;
+  distortionParams_.resize(getNumDistortionParam());
+
+  distortionParams_[0] = config[DIST_COEFFS][DATA][0].as<double>();
+}
+
 void CameraCalibration::loadCameraMatrix(
     const std::string &calibration_yaml_file) {
   CHECK(!calibration_yaml_file.empty());

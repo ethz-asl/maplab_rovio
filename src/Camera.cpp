@@ -56,6 +56,15 @@ namespace rovio{
                 << "), k2(" << k2_ << "), k3(" << k3_ << "), k4(" << k4_ << ")"
                 << std::endl;
       break;
+
+    case DistortionModel::FOV:
+      CHECK_EQ(calibration.distortionParams_.size(),
+               NUM_DISTORTION_MODEL_PARAMS[static_cast<int>(type_)]);
+
+      k1_ = calibration.distortionParams_[0];
+      std::cout << "Set distortion parameters (fov) to: w(" << k1_ << ")"
+                << std::endl;
+      break;
     default:
       std::cout << "ERROR: unknown camera Model detected! (model: "
                 << static_cast<int>(type_) << ")" << std::endl;
@@ -146,6 +155,84 @@ namespace rovio{
     J(1,1) = s + in(1)*s_r*r_y;
   }
 
+  void Camera::distortFov(const Eigen::Vector2d& in, Eigen::Vector2d& out) const {
+    const double& w = k1_;
+    const double r_u = in.norm();
+    const double r_u_cubed = r_u * r_u * r_u;
+    const double tanwhalf = tan(w / 2.);
+    const double tanwhalfsq = tanwhalf * tanwhalf;
+    const double atan_wrd = atan(2. * tanwhalf * r_u);
+    double r_rd;
+
+    if (w * w < 1e-5) {
+      // Limit w > 0.
+      r_rd = 1.0;
+    } else {
+      if (r_u * r_u < 1e-5) {
+        // Limit r_u > 0.
+        r_rd = 2. * tanwhalf / w;
+      } else {
+        r_rd = atan_wrd / (r_u * w);
+      }
+    }
+    out = in * r_rd;
+  }
+
+  void Camera::distortFov(const Eigen::Vector2d& in, Eigen::Vector2d& out, Eigen::Matrix2d& J) const{
+    const double& w = k1_;
+    const double r_u = in.norm();
+    const double r_u_cubed = r_u * r_u * r_u;
+    const double tanwhalf = tan(w / 2.);
+    const double tanwhalfsq = tanwhalf * tanwhalf;
+    const double atan_wrd = atan(2. * tanwhalf * r_u);
+    double r_rd;
+
+    if (w * w < 1e-5) {
+      // Limit w > 0.
+      r_rd = 1.0;
+    } else {
+      if (r_u * r_u < 1e-5) {
+        // Limit r_u > 0.
+        r_rd = 2. * tanwhalf / w;
+      } else {
+        r_rd = atan_wrd / (r_u * w);
+      }
+    }
+    out = in * r_rd;
+
+    // Jacobian.
+    const double& u = in(0);
+    const double& v = in(1);
+
+    J.resize(Eigen::NoChange, 2);
+    if (w * w < 1e-5) {
+      J.setIdentity();
+    }
+    else if (r_u * r_u < 1e-5) {
+      J.setIdentity();
+      // The coordinates get multiplied by an expression not depending on r_u.
+      J *= (2. * tanwhalf / w);
+    } else {
+      const double duf_du = (atan_wrd) / (w * r_u)
+                - (u * u * atan_wrd) / (w * r_u_cubed)
+                + (2 * u * u * tanwhalf)
+                / (w * (u * u + v * v) * (4 * tanwhalfsq * (u * u + v * v) + 1));
+      const double duf_dv = (2 * u * v * tanwhalf)
+                / (w * (u * u + v * v) * (4 * tanwhalfsq * (u * u + v * v) + 1))
+                - (u * v * atan_wrd) / (w * r_u_cubed);
+      const double dvf_du = (2 * u * v * tanwhalf)
+                / (w * (u * u + v * v) * (4 * tanwhalfsq * (u * u + v * v) + 1))
+                - (u * v * atan_wrd) / (w * r_u_cubed);
+      const double dvf_dv = (atan_wrd) / (w * r_u)
+                - (v * v * atan_wrd) / (w * r_u_cubed)
+                + (2 * v * v * tanwhalf)
+                / (w * (u * u + v * v) * (4 * tanwhalfsq * (u * u + v * v) + 1));
+
+      J << duf_du, duf_dv,
+           dvf_du, dvf_dv;
+    }
+  }
+
   void Camera::distort(const Eigen::Vector2d& in, Eigen::Vector2d& out) const{
     switch(type_){
       case DistortionModel::RADTAN:
@@ -154,8 +241,11 @@ namespace rovio{
       case DistortionModel::EQUIDIST:
         distortEquidist(in,out);
         break;
+      case DistortionModel::FOV:
+        distortFov(in,out);
+        break;
       default:
-        distortRadtan(in,out);
+        LOG(FATAL);
         break;
     }
   }
@@ -168,8 +258,11 @@ namespace rovio{
       case DistortionModel::EQUIDIST:
         distortEquidist(in,out,J);
         break;
+      case DistortionModel::FOV:
+        distortFov(in,out,J);
+        break;
       default:
-        distortRadtan(in,out,J);
+        LOG(FATAL);
         break;
     }
   }
