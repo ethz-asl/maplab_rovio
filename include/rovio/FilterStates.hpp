@@ -566,7 +566,7 @@ class PredictionNoise: public PredictionNoiseBase<STATE> {
  *  @tparam nCam      - Used total number of cameras.
  *  @tparam nPose     - Additional 6D pose in state.
  */
-template<unsigned int nMax, int nLevels, int patchSize,int nCam,int nPose,bool enableMapLocalization>
+template<unsigned int nMax, int nLevels, int patchSize,int nCam,int nPose,bool enableMapLocalization=false>
 class FilterState: public LWF::FilterState<
     State<nMax,nLevels,patchSize,nCam,nPose,enableMapLocalization>,
     PredictionMeas,
