@@ -78,12 +78,18 @@ class RovioInterface {
   virtual bool processImageUpdate(const int camID, const cv::Mat &cv_img,
                                   const double time_s) = 0;
 
+  // 6DoF pose-based localization.
   virtual bool processGroundTruthUpdate(const Eigen::Vector3d &JrJV, const QPD &qJV,
                                         const double time_s) = 0;
 
   virtual bool processGroundTruthOdometryUpdate(
       const Eigen::Vector3d &JrJV, const QPD &qJV,
       const Eigen::Matrix<double, 6, 6> &measuredCov, const double time_s) = 0;
+
+  // Localization landmark-based localization.
+  virtual bool processLocalizationLandmarkUpdates(
+      const int camID, const Eigen::Matrix2Xd& keypoint_observations,
+      const Eigen::Matrix3Xd& I_landmarks, const double time_s) = 0;
 
   /** \brief Enable and disable feature and patch update output. If disabled,
    *         the RovioState<FILTER> returned by the callback does not contain

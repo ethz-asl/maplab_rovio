@@ -101,11 +101,11 @@ class RobocentricFeatureElement: public LWF::ElementBase<RobocentricFeatureEleme
     coordinates_.set_nor(norTemp_,false);
   }
   mtGet& get(unsigned int i = 0){
-    assert(i==0);
+    CHECK(i==0);
     return *this;
   }
   const mtGet& get(unsigned int i = 0) const{
-    assert(i==0);
+    CHECK(i==0);
     return *this;
   }
   void registerElementToPropertyHandler(LWF::PropertyHandler* mpPropertyHandler, const std::string& str){

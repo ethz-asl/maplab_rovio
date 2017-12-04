@@ -88,6 +88,13 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
         doubleRegister_.removeScalarByVar(prenoiP_(mtNoise::template getId<mtNoise::_poa>(i)+j,mtNoise::template getId<mtNoise::_poa>(i)+j));
       }
     }
+
+    if (mtState::enableMapLocalization_) {
+      for(int j=0;j<3;j++){
+        doubleRegister_.removeScalarByVar(prenoiP_(mtNoise::template getId<mtNoise::_pmp>()+j,mtNoise::template getId<mtNoise::_pmp>()+j));
+        doubleRegister_.removeScalarByVar(prenoiP_(mtNoise::template getId<mtNoise::_pma>()+j,mtNoise::template getId<mtNoise::_pma>()+j));
+      }
+    }
     disablePreAndPostProcessingWarning_ = true;
   };
 
@@ -147,6 +154,13 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
       dQ = dQ.exponentialMap(noise.template get<mtNoise::_poa>(i)*sqrt(dt));
       output.poseRot(i) = dQ*state.poseRot(i);
     }
+
+    if (mtState::enableMapLocalization_) {
+      output.WrWG() = state.WrWG() + noise.template get<mtNoise::_pmp>()*sqrt(dt);
+      dQ = dQ.exponentialMap(noise.template get<mtNoise::_pma>()*sqrt(dt));
+      output.qWG() = dQ*state.qWG();
+    }
+
     output.aux().wMeasCov_ = prenoiP_.template block<3,3>(mtNoise::template getId<mtNoise::_att>(),mtNoise::template getId<mtNoise::_att>())/dt;
     output.fix();
     if(detectInertialMotion(state,meas_)){
@@ -176,7 +190,7 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
     F.template block<3,3>(mtState::template getId<mtState::_att>(),mtState::template getId<mtState::_gyb>()) = -dt*MPD(state.qWM()).matrix()*Lmat(dOmega);
     F.template block<3,3>(mtState::template getId<mtState::_att>(),mtState::template getId<mtState::_att>()) = M3D::Identity();
     LWF::NormalVectorElement nOut;
-    QPD qm;
+
     for(unsigned int i=0;i<mtState::nMax_;i++){
       const int camID = state.CfP(i).camID_;
       if(camID >= 0 && camID < mtState::nCam_){
@@ -186,6 +200,7 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
         oldD_ = state.dep(i);
         V3D dm = -dt*(gSM(oldC_.get_nor().getVec())*camVel/oldD_.getDistance()
             + (M3D::Identity()-oldC_.get_nor().getVec()*oldC_.get_nor().getVec().transpose())*camRor);
+        QPD qm;
         qm = qm.exponentialMap(dm);
         nOut = oldC_.get_nor().rotated(qm);
         F(mtState::template getId<mtState::_fea>(i)+2,mtState::template getId<mtState::_fea>(i)+2) = 1.0 - dt*oldD_.getParameterDerivativeCombined()
@@ -240,6 +255,10 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
       F.template block<3,3>(mtState::template getId<mtState::_pop>(i),mtState::template getId<mtState::_pop>(i)) = M3D::Identity();
       F.template block<3,3>(mtState::template getId<mtState::_poa>(i),mtState::template getId<mtState::_poa>(i)) = M3D::Identity();
     }
+    if (mtState::enableMapLocalization_) {
+      F.template block<3,3>(mtState::template getId<mtState::_pmp>(),mtState::template getId<mtState::_pmp>()) = M3D::Identity();
+      F.template block<3,3>(mtState::template getId<mtState::_pma>(),mtState::template getId<mtState::_pma>()) = M3D::Identity();
+    }
   }
   void jacNoise(MXD& G, const mtState& state, double dt) const{
     const V3D imuRor = meas_.template get<mtMeas::_gyr>()-state.gyb();
@@ -259,6 +278,12 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
       G.template block<3,3>(mtState::template getId<mtState::_pop>(i),mtNoise::template getId<mtNoise::_pop>(i)) = M3D::Identity()*sqrt(dt);
       G.template block<3,3>(mtState::template getId<mtState::_poa>(i),mtNoise::template getId<mtNoise::_poa>(i)) = M3D::Identity()*sqrt(dt);
     }
+
+    if (mtState::enableMapLocalization_) {
+      G.template block<3,3>(mtState::template getId<mtState::_pmp>(),mtNoise::template getId<mtNoise::_pmp>()) = M3D::Identity()*sqrt(dt);
+      G.template block<3,3>(mtState::template getId<mtState::_pma>(),mtNoise::template getId<mtNoise::_pma>()) = M3D::Identity()*sqrt(dt);
+    }
+
     LWF::NormalVectorElement nOut;
     for(unsigned int i=0;i<mtState::nMax_;i++){
       const int camID = state.CfP(i).camID_;
@@ -269,7 +294,8 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
         const V3D camVel = state.qCM(camID).rotate(V3D(imuRor.cross(state.MrMC(camID))-state.MvM()));
         V3D dm = -dt*(gSM(oldC_.get_nor().getVec())*camVel/oldD_.getDistance()
             + (M3D::Identity()-oldC_.get_nor().getVec()*oldC_.get_nor().getVec().transpose())*camRor);
-        QPD qm = qm.exponentialMap(dm);
+        QPD qm;
+        qm = qm.exponentialMap(dm);
         nOut = oldC_.get_nor().rotated(qm);
         G(mtState::template getId<mtState::_fea>(i)+2,mtNoise::template getId<mtNoise::_fea>(i)+2) = sqrt(dt);
         G.template block<1,3>(mtState::template getId<mtState::_fea>(i)+2,mtNoise::template getId<mtNoise::_att>()) =

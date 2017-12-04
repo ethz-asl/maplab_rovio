@@ -180,6 +180,8 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
   static constexpr int kNumPoses = FILTER::mtFilterState::mtState::nPose_;
   static constexpr int kPatchArea = kPatchSize * kPatchSize;
   static constexpr int kPatchAreaTimesLevels = kPatchArea * kNumPatchLevels;
+  static constexpr int kMapLocalizationEnabled =
+      FILTER::mtFilterState::mtState::enableMapLocalization_;
 
   bool getIsInitialized() const { return isInitialized; }
   double getTimestamp() const { return timeAfterUpdate; }
@@ -204,6 +206,9 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
   bool getHasInertialPose() const { return hasInertialPose; }
   const Eigen::Vector3d &get_IrIW() const { return IrIW; }
   const kindr::RotationQuaternionPD &get_qWI() const { return qWI; }
+  bool getHasMapLocalizationPose() const { return hasMapLocalizationPose; }
+  virtual const Eigen::Vector3d &get_WrWG() const { return WrWG; }
+  virtual const kindr::RotationQuaternionPD &get_qWG() const { return qWG; }
 
   bool hasFeatureState() const { return hasFeatureUpdate; }
   const RovioFeatureState &getFeatureState() const {
@@ -261,6 +266,11 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
   bool hasInertialPose = false;
   Eigen::Vector3d IrIW;
   kindr::RotationQuaternionPD qWI;
+  // Transformation between localization-map frame (G) and the odometry world
+  // frame (W).
+  bool hasMapLocalizationPose = false;
+  Eigen::Vector3d WrWG;
+  kindr::RotationQuaternionPD qWG;
 
   // Optional: Feature state.
   bool hasFeatureUpdate = false;

@@ -37,6 +37,7 @@ namespace rovio {
 
 class PoseInnovation: public LWF::State<LWF::VectorElement<3>,LWF::QuaternionElement>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   static constexpr unsigned int _pos = 0;
   static constexpr unsigned int _att = _pos+1;
   PoseInnovation(){
@@ -58,6 +59,8 @@ class PoseInnovation: public LWF::State<LWF::VectorElement<3>,LWF::QuaternionEle
 };
 class PoseUpdateMeas: public LWF::State<LWF::VectorElement<3>,LWF::QuaternionElement>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   static constexpr unsigned int _pos = 0;
   static constexpr unsigned int _att = _pos+1;
   Eigen::Matrix<double,6,6> measuredCov_; // Will be used to scale the update covariance according to the measurement
@@ -87,6 +90,8 @@ class PoseUpdateMeas: public LWF::State<LWF::VectorElement<3>,LWF::QuaternionEle
 };
 class PoseUpdateNoise: public LWF::State<LWF::VectorElement<3>,LWF::VectorElement<3>>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+
   static constexpr unsigned int _pos = 0;
   static constexpr unsigned int _att = _pos+1;
   PoseUpdateNoise(){
@@ -128,6 +133,7 @@ class PoseOutlierDetection: public LWF::OutlierDetection<LWF::ODEntry<PoseInnova
 template<typename FILTERSTATE, int inertialPoseIndex, int bodyPoseIndex>
 class PoseUpdate: public LWF::Update<PoseInnovation,FILTERSTATE,PoseUpdateMeas,PoseUpdateNoise,PoseOutlierDetection,false>{
  public:
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
   typedef LWF::Update<PoseInnovation,FILTERSTATE,PoseUpdateMeas,PoseUpdateNoise,PoseOutlierDetection,false> Base;
   using Base::eval;
   using Base::boolRegister_;

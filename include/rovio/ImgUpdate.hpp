@@ -383,7 +383,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
   /** \brief Refresh the properties of the property handler
    */
   void refreshProperties(){
-    if(isZeroVelocityUpdateEnabled_) assert(doVisualMotionDetection_);
+    if(isZeroVelocityUpdateEnabled_) CHECK(doVisualMotionDetection_);
     if(useDirectMethod_){
       updnoiP_.setIdentity();
       updnoiP_ = updnoiP_*updateNoiseInt_;
@@ -594,7 +594,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *   @todo sort feature by covariance and use more accurate ones first
    */
   void commonPreProcess(mtFilterState& filterState, const mtMeas& meas){
-    assert(filterState.t_ == meas.aux().imgTime_);
+    CHECK(filterState.t_ == meas.aux().imgTime_);
     for(int i=0;i<mtState::nCam_;i++){
       if(doFrameVisualisation_){
         cvtColor(meas.aux().pyr_[i].imgs_[0], filterState.img_[i], CV_GRAY2RGB);

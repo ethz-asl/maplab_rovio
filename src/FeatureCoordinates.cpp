@@ -40,7 +40,7 @@ namespace rovio{
 
   bool FeatureCoordinates::com_c() const{
     if(!valid_c_){
-      assert(mpCamera_ != nullptr);
+      CHECK(mpCamera_ != nullptr);
       if(valid_nor_ && mpCamera_->bearingToPixel(nor_,c_)){
         valid_c_ = true;
       }
@@ -57,7 +57,7 @@ namespace rovio{
 
   bool FeatureCoordinates::com_nor() const{
     if(!valid_nor_){
-      assert(mpCamera_ != nullptr);
+      CHECK(mpCamera_ != nullptr);
       if(valid_c_ && mpCamera_->pixelToBearing(c_,nor_)){
         valid_nor_ = true;
       }
@@ -73,7 +73,7 @@ namespace rovio{
   }
 
   Eigen::Matrix<double,2,2> FeatureCoordinates::get_J() const{
-    assert(mpCamera_ != nullptr);
+    CHECK(mpCamera_ != nullptr);
     if(!mpCamera_->bearingToPixel(get_nor(),c_,matrix2dTemp_)){
       matrix2dTemp_.setZero();
       std::cout << "    \033[31mERROR: No valid coordinate data!\033[0m" << std::endl;

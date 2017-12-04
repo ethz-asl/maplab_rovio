@@ -57,6 +57,7 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
                                 (int)(FeatureOutputReadable::D_)) {
   mpImgUpdate_ = CHECK_NOTNULL(&std::get<0>(mpFilter_->mUpdates_));
   mpPoseUpdate_ = CHECK_NOTNULL(&std::get<1>(mpFilter_->mUpdates_));
+  mpLocLandmarkUpdate_ = CHECK_NOTNULL(&std::get<3>(mpFilter_->mUpdates_));
 }
 
 template <typename FILTER>
@@ -280,6 +281,35 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
 }
 
 template <typename FILTER>
+bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
+    const int camID, const Eigen::Matrix2Xd& keypoint_observations,
+    const Eigen::Matrix3Xd& G_landmarks, const double time_s) {
+  CHECK_EQ(keypoint_observations.cols(), G_landmarks.cols());
+
+  if (!init_state_.isInitialized()) {
+    return false;
+  }
+
+  bool measurements_accepted = true;
+  for (int meas_idx = 0u; meas_idx < G_landmarks.cols(); ++meas_idx) {
+    locLandmarkUpdateMeas_.keypoint() = keypoint_observations.col(meas_idx);
+    locLandmarkUpdateMeas_.G_landmark() = G_landmarks.col(meas_idx);
+    locLandmarkUpdateMeas_.camera_index() = camID;
+
+    // The timeline does not take multiple measurements at the same timestamp.
+    // Therefore we slightly increase the timestamp for each localization
+    // landmark. Such a small deviation should have no effect on the estimation.
+    const double timestamp_sec_adapted =
+        time_s + static_cast<double>(meas_idx) * 1e-8;
+    measurements_accepted &=
+        mpFilter_->template addUpdateMeas<3>(
+            locLandmarkUpdateMeas_, timestamp_sec_adapted);
+  }
+  updateFilter();
+  return measurements_accepted;
+}
+
+template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processGroundTruthUpdate(
     const Eigen::Vector3d &JrJV, const QPD &qJV, const double time_s) {
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
@@ -375,6 +405,14 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
     filter_update->hasInertialPose = true;
     filter_update->IrIW = state.poseLin(mpPoseUpdate_->inertialPoseIndex_);
     filter_update->qWI = state.poseRot(mpPoseUpdate_->inertialPoseIndex_);
+  }
+
+  // Transformation between localization-map frame (G) and the odometry world
+  // frame (W).
+  if (mtState::enableMapLocalization_) {
+    filter_update->hasMapLocalizationPose = true;
+    filter_update->WrWG = state.WrWG();
+    filter_update->qWG = state.qWG();
   }
 
   // IMU state and IMU covariance.
