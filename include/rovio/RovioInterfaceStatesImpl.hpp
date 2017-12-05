@@ -145,7 +145,6 @@ struct RovioFeatureStateImpl : public RovioFeatureState {
     return kMaxNumFeatures;
   }
 
-
   // Since we use a fixed number of features, the (in)valid ones are determined
   // with this array.
   bool isFeatureValid[kMaxNumFeatures];
