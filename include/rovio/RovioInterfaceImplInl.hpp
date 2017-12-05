@@ -300,13 +300,35 @@ bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
     // Therefore we slightly increase the timestamp for each localization
     // landmark. Such a small deviation should have no effect on the estimation.
     const double timestamp_sec_adapted =
-        time_s + static_cast<double>(meas_idx) * 1e-8;
+        time_s + static_cast<double>(meas_idx) * 1.0e-8;
     measurements_accepted &=
         mpFilter_->template addUpdateMeas<3>(
             locLandmarkUpdateMeas_, timestamp_sec_adapted);
+    updateFilter();
   }
-  updateFilter();
   return measurements_accepted;
+}
+
+template <typename FILTER>
+void RovioInterfaceImpl<FILTER>::resetLocalizationMapBaseframeAndCovariance(
+    const V3D& WrWG, const QPD& qWG, double position_cov,
+    double rotation_cov) {
+  CHECK_GT(position_cov, 0.0);
+  CHECK_GT(rotation_cov, 0.0);
+
+  Eigen::Matrix3d mat_position_cov = Eigen::Matrix3d::Zero();
+  mat_position_cov.diagonal().setConstant(position_cov);
+  Eigen::Matrix3d mat_rotation_cov = Eigen::Matrix3d::Zero();
+  mat_rotation_cov.diagonal().setConstant(rotation_cov);
+
+  std::vector<typename FILTER::mtFilterState*> states{&mpFilter_->safe_,
+    &mpFilter_->front_, &mpFilter_->init_};
+  for (typename FILTER::mtFilterState* state : states) {
+    state->resetLocalizationMapBaseframeCovariance(
+        mat_position_cov, mat_rotation_cov);
+    state->state_.qWG() = qWG;
+    state->state_.WrWG() = WrWG;
+  }
 }
 
 template <typename FILTER>

@@ -671,8 +671,8 @@ class FilterState: public LWF::FilterState<
         [](size_t start_index, size_t dim, const Eigen::MatrixXd& new_cov,
            Eigen::MatrixXd* cov) {
       CHECK_NOTNULL(cov);
-      CHECK_LT(start_index + dim, cov->rows());
-      CHECK_LT(start_index + dim, cov->cols());
+      CHECK_LE(start_index + dim, cov->rows());
+      CHECK_LE(start_index + dim, cov->cols());
       CHECK_EQ(new_cov.rows(), dim);
       CHECK_EQ(new_cov.cols(), dim);
       cov->middleRows(start_index, start_index + dim).setZero();
@@ -694,6 +694,13 @@ class FilterState: public LWF::FilterState<
     CHECK(mtState::enableMapLocalization_);
     const size_t index = mtState::template getId<mtState::_pmp>();
     return cov_.block(index, index, 3 , 3);
+  }
+
+  inline Eigen::Matrix<double,6,6> GrGW__qWG_Cov() {
+    CHECK(mtState::enableMapLocalization_);
+    CHECK_EQ(mtState::_pma-1, mtState::_pmp);
+    const size_t index = mtState::template getId<mtState::_pmp>();
+    return cov_.block(index, index, 6, 6);
   }
 
   /** \brief Get the median distance parameter values of the state features for each camera.

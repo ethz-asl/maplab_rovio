@@ -91,6 +91,10 @@ class RovioInterface {
       const int camID, const Eigen::Matrix2Xd& keypoint_observations,
       const Eigen::Matrix3Xd& I_landmarks, const double time_s) = 0;
 
+  virtual void resetLocalizationMapBaseframeAndCovariance(
+      const V3D& WrWG, const QPD& qWG, double position_cov,
+      double rotation_cov) = 0;
+
   /** \brief Enable and disable feature and patch update output. If disabled,
    *         the RovioState<FILTER> returned by the callback does not contain
    * any state information of the features/patches.

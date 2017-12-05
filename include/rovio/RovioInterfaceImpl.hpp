@@ -123,6 +123,10 @@ public:
       const int camID, const Eigen::Matrix2Xd& keypoint_observations,
       const Eigen::Matrix3Xd& G_landmarks, const double time_s);
 
+  void resetLocalizationMapBaseframeAndCovariance(
+      const V3D& WrWG, const QPD& qWG, double position_cov,
+      double rotation_cov);
+
   /** \brief Register multiple callbacks that are invoked once the filter
    *         concludes a successful update.
    */

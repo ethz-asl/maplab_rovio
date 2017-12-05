@@ -171,7 +171,7 @@ class LocalizationLandmarkUpdate :
     multi_cameras_ = multi_cameras;
   }
 
-  void evaluateModel(const mtState& state, const mtNoise* const noise,
+  bool evaluateModel(const mtState& state, const mtNoise* const noise,
                      mtInnovation* innovation, MXD* jacobian) const {
     // G: Inertial frame of localization map
     // W: Odometry frame of ROVIO
@@ -191,15 +191,21 @@ class LocalizationLandmarkUpdate :
     cv::Point2f predicted_keypoint_cv;
     CHECK_LT(camera_index, mtState::nCam_);
     Eigen::Matrix<double, 2, 3> d_r__d_C_l;
-    CHECK_NOTNULL(multi_cameras_)->cameras_[camera_index].
-        bearingToPixel(C_l, predicted_keypoint_cv, d_r__d_C_l);
+    const bool projection_success =
+        CHECK_NOTNULL(multi_cameras_)->cameras_[camera_index].
+          bearingToPixel(C_l, predicted_keypoint_cv, d_r__d_C_l);
+
+    if (!projection_success) {
+      LOG(WARNING) << "Projection failed.";
+      return false;
+    }
 
     if (innovation != nullptr) {
       CHECK_NOTNULL(noise);
       Eigen::Vector2d predicted_keypoint(
           predicted_keypoint_cv.x, predicted_keypoint_cv.y);
-      innovation->pix() =
-              (predicted_keypoint - measurement_.keypoint()) + noise->pix();
+      innovation->pix() = (predicted_keypoint - measurement_.keypoint()) +
+          noise->pix();
     }
 
     if (jacobian != nullptr) {
@@ -235,11 +241,12 @@ class LocalizationLandmarkUpdate :
       jacobian->block<2,3>(0, index_qCM) =
           -d_r__d_C_l * gSM(qCM.rotate(V3D(M_l - MrMC)));
     }
+    return true;
   }
 
-  void evalInnovation(mtInnovation& y, const mtState& state,
+  bool evalInnovation(mtInnovation& y, const mtState& state,
                       const mtNoise& noise) const {
-    evaluateModel(state, &noise, &y, /*jacobian=*/nullptr);
+    return evaluateModel(state, &noise, &y, /*jacobian=*/nullptr);
   }
 
   void jacState(MXD& F, const mtState& state) const {

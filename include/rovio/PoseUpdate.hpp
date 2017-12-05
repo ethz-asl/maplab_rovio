@@ -230,7 +230,7 @@ class PoseUpdate: public LWF::Update<PoseInnovation,FILTERSTATE,PoseUpdateMeas,P
       return qVM_;
     }
   }
-  void evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
+  bool evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
     // IrIV = IrIW + qWI^T*(WrWM + qWM*MrMV)
     // qVI = qVM*qWM^T*qWI
     if(enablePosition_){
@@ -245,6 +245,7 @@ class PoseUpdate: public LWF::Update<PoseInnovation,FILTERSTATE,PoseUpdateMeas,P
       QPD attNoise = attNoise.exponentialMap(noise.att());
       y.att() = attNoise;
     }
+    return true;
   }
   void jacState(MXD& F, const mtState& state) const{
     F.setZero();
