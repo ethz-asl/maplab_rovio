@@ -30,10 +30,12 @@
 #define ROVIO_LOCALIZATION_LANDMARK_UPDATE_HPP_
 
 #include <Eigen/Core>
+#include <glog/logging.h>
+#include <lightweight_filtering/common.hpp>
+#include <lightweight_filtering/Update.hpp>
+#include <lightweight_filtering/State.hpp>
 
-#include "lightweight_filtering/common.hpp"
-#include "lightweight_filtering/Update.hpp"
-#include "lightweight_filtering/State.hpp"
+#include "rovio/MultiCamera.hpp"
 
 namespace rovio {
 
@@ -139,6 +141,8 @@ class LocalizationLandmarkUpdate :
   typedef typename Base::mtMeas mtMeas;
   typedef typename Base::mtNoise mtNoise;
   typedef typename Base::mtOutlierDetection mtOutlierDetection;
+  typedef typename Base::mtInputTuple mtInputTuple;
+  typedef typename Base::mtModelBase mtModelBase;
 
   LocalizationLandmarkUpdate()
     : localization_pixel_sigma_(1.0),
@@ -169,6 +173,10 @@ class LocalizationLandmarkUpdate :
   void setCamera(MultiCamera<mtState::nCam_>* multi_cameras){
     CHECK_NOTNULL(multi_cameras);
     multi_cameras_ = multi_cameras;
+  }
+
+  void setMeasurement(const LocalizationLandmarkMeasurement& measurement) {
+    measurement_ = measurement;
   }
 
   bool evaluateModel(const mtState& state, const mtNoise* const noise,
@@ -203,7 +211,7 @@ class LocalizationLandmarkUpdate :
     if (innovation != nullptr) {
       CHECK_NOTNULL(noise);
       Eigen::Vector2d predicted_keypoint(
-          predicted_keypoint_cv.x, predicted_keypoint_cv.y);
+        predicted_keypoint_cv.x, predicted_keypoint_cv.y);
       innovation->pix() = (predicted_keypoint - measurement_.keypoint()) +
           noise->pix();
     }
@@ -218,25 +226,26 @@ class LocalizationLandmarkUpdate :
 
       const size_t index_qWG = mtState::template getId<mtState::_pma>();
       jacobian->block<2,3>(0, index_qWG) =
-          -d_r__d_C_l * MPD(qCM * state.qWM().inverted()).matrix() *
-          gSM(W_l);
+          -d_r__d_C_l *
+          MPD(qCM * state.qWM().inverted()).matrix() *
+          gSM(state.qWG().rotate(measurement_.G_landmark()));
 
       // d_r__d_T_WM
       const size_t index_WrWM = mtState::template getId<mtState::_pos>();
       jacobian->block<2,3>(0, index_WrWM) =
-          -d_r__d_C_l * MPD(qCM * state.qWM().inverted()).matrix();
+         -d_r__d_C_l * MPD(qCM * state.qWM().inverted()).matrix();
 
       const size_t index_qWM = mtState::template getId<mtState::_att>();
       jacobian->block<2,3>(0, index_qWM) =
-          d_r__d_C_l * MPD(qCM).matrix() *
-          gSM(state.qWM().inverseRotate(V3D(W_l - state.WrWM())));
+          d_r__d_C_l * MPD(qCM * state.qWM().inverted()).matrix() *
+          gSM(W_l - state.WrWM());
 
       // d_r__d_T_MC
-      const size_t index_MrMC = mtState::template getId<mtState::_vea>() +
+      const size_t index_MrMC = mtState::template getId<mtState::_vep>() +
           3u * camera_index;
       jacobian->block<2,3>(0, index_MrMC) = -d_r__d_C_l * MPD(qCM).matrix();
 
-      const size_t index_qCM = mtState::template getId<mtState::_vep>() +
+      const size_t index_qCM = mtState::template getId<mtState::_vea>() +
            3u * camera_index;
       jacobian->block<2,3>(0, index_qCM) =
           -d_r__d_C_l * gSM(qCM.rotate(V3D(M_l - MrMC)));
@@ -250,7 +259,18 @@ class LocalizationLandmarkUpdate :
   }
 
   void jacState(MXD& F, const mtState& state) const {
+    CHECK_EQ(F.rows(), mtInnovation::D_);
+    CHECK_EQ(F.cols(), mtState::D_);
     evaluateModel(state, /*noise=*/nullptr, /*innovation=*/nullptr, &F);
+  }
+
+  void jacStateFD(MXD& F, const mtState& state, double epsilon = 1e-4,
+                  double dt = 0.0) const {
+    CHECK_EQ(F.rows(), mtInnovation::D_);
+    CHECK_EQ(F.cols(), mtState::D_);
+    mtInputTuple input_tuples;
+    std::get<0>(input_tuples) = state;
+    this->template jacInputFD<0, 0, mtState::D_>(F, input_tuples, dt, epsilon);
   }
 
   void jacNoise(MXD& G, const mtState& state) const {

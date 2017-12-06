@@ -675,8 +675,8 @@ class FilterState: public LWF::FilterState<
       CHECK_LE(start_index + dim, cov->cols());
       CHECK_EQ(new_cov.rows(), dim);
       CHECK_EQ(new_cov.cols(), dim);
-      cov->middleRows(start_index, start_index + dim).setZero();
-      cov->middleCols(start_index, start_index + dim).setZero();
+      cov->middleRows(start_index, dim).setZero();
+      cov->middleCols(start_index, dim).setZero();
       cov->block(start_index, start_index, dim , dim) = new_cov;
     };
     resetCovarianceAtIndex(
