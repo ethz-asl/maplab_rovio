@@ -40,7 +40,7 @@ enum TrackingStatus{
   NOT_IN_FRAME, /**< Feature is not in frame*/
   FAILED_ALIGNEMENT, /**< The pre-alignment failed*/
   FAILED_TRACKING, /**< The tracking in the filter failed, e.g. outlier*/
-  TRACKED /**< Successfull tracking with filter*/
+  TRACKED /**< Successful tracking with filter*/
 };
 
 template<int nCam>

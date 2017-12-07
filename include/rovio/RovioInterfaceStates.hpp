@@ -71,6 +71,8 @@ struct RovioFeatureState {
   virtual float get_DistanceCov(const size_t feature_idx) const = 0;
 
   virtual uint32_t get_Status(const size_t feature_idx) const = 0;
+
+  virtual int get_MaxNumFeatures() const = 0;
 };
 
 struct RovioState {
