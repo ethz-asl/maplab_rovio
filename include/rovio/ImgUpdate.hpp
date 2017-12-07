@@ -460,6 +460,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       transformFeatureOutputCT_.setFeatureID(ID);
       transformFeatureOutputCT_.setOutputCameraID(activeCamID);
       transformFeatureOutputCT_.transformState(candidate,featureOutput_);
+      candidate.CfP(ID).camID_ = 0;
       transformFeatureOutputCT_.jacTransform(featureOutputJac_,candidate);
       mpMultiCamera_->cameras_[activeCamID].bearingToPixel(featureOutput_.c().get_nor(),c_temp_,c_J_);
 
@@ -621,7 +622,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         if(filterState.fsm_.isValid_[i]){
           const int& camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
-          tempCoordinates_.camID_ = camID;
+          tempCoordinates_.camID_ = 0; //camID;
           tempCoordinates_.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
           tempCoordinates_.set_warp_identity();
           CHECK_NOTNULL(tempCoordinates_.mpCamera_);
@@ -697,6 +698,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         // Get coordinates in target frame
         transformFeatureOutputCT_.setFeatureID(ID);
         transformFeatureOutputCT_.setOutputCameraID(activeCamID);
+        state.CfP(ID).mpCamera_ = &(mpMultiCamera_->cameras_[0]);
         transformFeatureOutputCT_.transformState(state,featureOutput_);
         transformFeatureOutputCT_.transformCovMat(state,cov,featureOutputCov_);
         if(verbose_) std::cout << "    Normal in camera frame: " << featureOutput_.c().get_nor().getVec().transpose() << std::endl;
@@ -819,6 +821,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         // Update status and visualization
         transformFeatureOutputCT_.setFeatureID(ID);
         transformFeatureOutputCT_.setOutputCameraID(activeCamID);
+        filterState.state_.CfP(ID).mpCamera_ = &(mpMultiCamera_->cameras_[0]);
         transformFeatureOutputCT_.transformState(filterState.state_,featureOutput_);
 
         // Draw information ellipse

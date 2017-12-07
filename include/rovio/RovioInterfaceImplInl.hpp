@@ -461,7 +461,7 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
   filter_update->gyb = state.gyb();
   filter_update->acb = state.acb();
 
-  if (get_feature_update) {
+  if (false && get_feature_update) {
     RovioFeatureStateImpl<FILTER> *feature_state_ptr =
         new RovioFeatureStateImpl<FILTER>();
     RovioFeatureStateImpl<FILTER> &feature_state = *feature_state_ptr;
