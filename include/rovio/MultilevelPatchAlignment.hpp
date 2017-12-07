@@ -412,7 +412,7 @@ class MultilevelPatchAlignment {
     Eigen::Vector3f update; update.setZero();
     for(int iter = 0; iter<maxIter; ++iter){
       if(std::isnan(cOut.get_c().x) || std::isnan(cOut.get_c().y)){
-        assert(false);
+        CHECK(false);
         return false;
       }
       Eigen::Vector3f Jres; Jres.setZero();
@@ -523,7 +523,7 @@ class MultilevelPatchAlignment {
     bool converged = false;
     for(int iter = 0; iter<maxIter; ++iter){
       if(std::isnan(cOut.get_c().x) || std::isnan(cOut.get_c().y)){
-        assert(false);
+        CHECK(false);
         return false;
       }
       if(!getLinearAlignEquations(pyr,mp,cOut,l1,l2,A_,b_)){

@@ -609,7 +609,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     filterState.state_.aux().activeFeature_ = 0;
     filterState.state_.aux().activeCameraCounter_ = 0;
 
-
     /* Detect Image changes by looking at the feature patches between current and previous image (both at the current feature location)
      * The maximum change of intensity is obtained if the pixel is moved along the strongest gradient.
      * The maximal singularvalue, which is equivalent to the root of the larger eigenvalue of the Hessian,
@@ -621,6 +620,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       for(unsigned int i=0;i<mtState::nMax_;i++){
         if(filterState.fsm_.isValid_[i]){
           const int& camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
+          tempCoordinates_.camID_ = camID;
+          tempCoordinates_.mpCamera_ = &mpMultiCamera_->cameras_[camID];
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
           tempCoordinates_.set_warp_identity();
           if(mlpTemp1_.isMultilevelPatchInFrame(filterState.prevPyr_[camID],tempCoordinates_,startLevel_,true)){
