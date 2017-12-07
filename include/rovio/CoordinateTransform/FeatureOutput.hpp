@@ -118,9 +118,10 @@ class TransformFeatureOutputCT:public LWF::CoordinateTransform<STATE,FeatureOutp
     outputCamID_ = camID;
   }
   void evalTransform(mtOutput& output, const mtInput& input) const{
+    CHECK_NOTNULL(mpMultiCamera_);
     input.updateMultiCameraExtrinsics(mpMultiCamera_);
     mpMultiCamera_->transformFeature(outputCamID_,input.CfP(ID_),input.dep(ID_),output.c(),output.d());
-    if(input.CfP(ID_).trackWarping_ && input.CfP(ID_).com_warp_nor()){
+    if(input.CfP(ID_).trackWarping_) { //&& output.c().com_warp_nor()) { //input.CfP(ID_).com_warp_nor()){
       const int& camID = input.CfP(ID_).camID_;
       const QPD qDC = input.qCM(outputCamID_)*input.qCM(camID).inverted(); // TODO: avoid double computation
       const V3D CrCD = input.qCM(camID).rotate(V3D(input.MrMC(outputCamID_)-input.MrMC(camID)));
@@ -138,6 +139,7 @@ class TransformFeatureOutputCT:public LWF::CoordinateTransform<STATE,FeatureOutp
     J.setZero();
     const int& camID = input.CfP(ID_).camID_;
     if(camID != outputCamID_){
+      CHECK_NOTNULL(mpMultiCamera_);
       input.updateMultiCameraExtrinsics(mpMultiCamera_);
       const QPD qDC = input.qCM(outputCamID_)*input.qCM(camID).inverted(); // TODO: avoid double computation
       const V3D CrCD = input.qCM(camID).rotate(V3D(input.MrMC(outputCamID_)-input.MrMC(camID)));

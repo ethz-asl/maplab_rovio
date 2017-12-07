@@ -620,10 +620,11 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       for(unsigned int i=0;i<mtState::nMax_;i++){
         if(filterState.fsm_.isValid_[i]){
           const int& camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
-          tempCoordinates_.camID_ = camID;
-          tempCoordinates_.mpCamera_ = &mpMultiCamera_->cameras_[camID];
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
+          tempCoordinates_.camID_ = camID;
+          tempCoordinates_.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
           tempCoordinates_.set_warp_identity();
+          CHECK_NOTNULL(tempCoordinates_.mpCamera_);
           if(mlpTemp1_.isMultilevelPatchInFrame(filterState.prevPyr_[camID],tempCoordinates_,startLevel_,true)){
             mlpTemp1_.extractMultilevelPatchFromImage(filterState.prevPyr_[camID],tempCoordinates_,startLevel_,true);
             mlpTemp1_.computeMultilevelShiTomasiScore(endLevel_,startLevel_);
@@ -906,6 +907,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     MXD& cov = filterState.cov_;
 
     // Actualize camera extrinsics
+    CHECK_NOTNULL(mpMultiCamera_);
     state.updateMultiCameraExtrinsics(mpMultiCamera_);
 
     int countTracked = 0;
@@ -913,12 +915,15 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     for(unsigned int i=0;i<mtState::nMax_;i++){
       if(filterState.fsm_.isValid_[i]){
         FeatureManager<mtState::nLevels_,mtState::patchSize_,mtState::nCam_>& f = filterState.fsm_.features_[i];
+        CHECK_NOTNULL(f.mpCoordinates_);
+        CHECK_NOTNULL(f.mpCoordinates_->mpCamera_);
         const int camID = f.mpCoordinates_->camID_;
         if(f.mpStatistics_->trackedInSomeFrame()){
           countTracked++;
         }
         if(f.mpStatistics_->status_[camID] == TRACKED && filterState.t_ - f.mpStatistics_->lastPatchUpdate_ > minTimeBetweenPatchUpdate_){
           tempCoordinates_ = *f.mpCoordinates_;
+          CHECK_NOTNULL(tempCoordinates_.mpCamera_);
           tempCoordinates_.set_warp_identity();
           if(mlpTemp1_.isMultilevelPatchInFrame(meas.aux().pyr_[camID],tempCoordinates_,startLevel_,true)){
             mlpTemp1_.extractMultilevelPatchFromImage(meas.aux().pyr_[camID],tempCoordinates_,startLevel_,true);
@@ -999,6 +1004,12 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         for(int l=endLevel_;l<=startLevel_;l++){
           meas.aux().pyr_[camID].detectFastCorners(candidates_,l,fastDetectionThreshold_);
         }
+
+        for (auto& candidate : candidates_) {
+          candidate.camID_ = camID;
+          candidate.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
+        }
+
         const double t2 = (double) cv::getTickCount();
         if(verbose_) std::cout << "== Detected " << candidates_.size() << " on levels " << endLevel_ << "-" << startLevel_ << " (" << (t2-t1)/cv::getTickFrequency()*1000 << " ms)" << std::endl;
         std::unordered_set<unsigned int> newSet = filterState.fsm_.addBestCandidates(candidates_,meas.aux().pyr_[camID],camID,filterState.t_,

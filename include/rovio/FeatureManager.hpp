@@ -420,6 +420,7 @@ class FeatureSetManager{
       // Compute all multilevelPatches including shi-tomasi scores and add bucket ID
       float maxScore = -1.0;
       for(int i=0;i<candidates.size();i++){
+        CHECK_NOTNULL(candidates[i].mpCamera_);
         if(MultilevelPatch<nLevels,patchSize>::isMultilevelPatchInFrame(pyr,candidates[i],l2,true)){
           multilevelPatches.emplace_back();
           std::get<1>(multilevelPatches.back()).extractMultilevelPatchFromImage(pyr,candidates[i],l2,true);

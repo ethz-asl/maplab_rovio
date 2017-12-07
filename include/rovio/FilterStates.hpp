@@ -466,6 +466,7 @@ class State: public StateBase<nMax, nLevels, patchSize, nCam, nPose, enableMapLo
    *  @param mpMultiCamera - Pointer to the multicamera object
    */
   void updateMultiCameraExtrinsics(MultiCamera<nCam>* mpMultiCamera) const{
+    CHECK_NOTNULL(mpMultiCamera);
     for(int i=0;i<nCam;i++){
       mpMultiCamera->BrBC_[i] = MrMC(i);
       mpMultiCamera->qCB_[i] = qCM(i);

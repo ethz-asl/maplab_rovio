@@ -48,7 +48,7 @@ namespace rovio {
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     typename std::shared_ptr<mtFilter> mpFilter)
-    : mpFilter_(mpFilter), transformFeatureOutputCT_(&mpFilter->multiCamera_),
+    : mpFilter_(mpFilter), transformFeatureOutputCT_(CHECK_NOTNULL(&mpFilter->multiCamera_)),
       landmarkOutputImuCT_(&mpFilter->multiCamera_),
       cameraOutputCov_((int)(mtOutput::D_), (int)(mtOutput::D_)),
       featureOutputCov_((int)(FeatureOutput::D_), (int)(FeatureOutput::D_)),
@@ -58,6 +58,8 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
   mpImgUpdate_ = CHECK_NOTNULL(&std::get<0>(mpFilter_->mUpdates_));
   mpPoseUpdate_ = CHECK_NOTNULL(&std::get<1>(mpFilter_->mUpdates_));
   mpLocLandmarkUpdate_ = CHECK_NOTNULL(&std::get<3>(mpFilter_->mUpdates_));
+
+  CHECK_NOTNULL(&mpFilter->multiCamera_);
 }
 
 template <typename FILTER>
@@ -414,6 +416,7 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
   mtState &state = mpFilter_->safe_.state_;
 
   // Get camera extrinsics.
+  CHECK_NOTNULL(&mpFilter_->multiCamera_);
   state.updateMultiCameraExtrinsics(&mpFilter_->multiCamera_);
   for (unsigned int i = 0u; i < mtState::nCam_; ++i) {
     filter_update->MrMC[i] = state.MrMC(i);

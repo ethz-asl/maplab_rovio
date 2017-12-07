@@ -190,6 +190,7 @@ class MultilevelPatch{
    *                      If false, the check is only executed with the general patch dimensions.
    */
   static bool isMultilevelPatchInFrame(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
+    CHECK_NOTNULL(c.mpCamera_);
     if(!c.isInFront() || !c.com_warp_c()) return false;
     const auto coorTemp = pyr.levelTranformCoordinates(c,0,l);
     return Patch<patchSize>::isPatchInFrame(pyr.imgs_[l],coorTemp,withBorder);
