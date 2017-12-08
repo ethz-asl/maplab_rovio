@@ -179,8 +179,8 @@ class LocalizationLandmarkUpdate :
     measurement_ = measurement;
   }
 
-  bool evaluateModel(const mtState& state, const mtNoise* const noise,
-                     mtInnovation* innovation, MXD* jacobian) const {
+  bool evaluateModel(const mtState& state, mtInnovation* innovation,
+                     MXD* jacobian) const {
     // G: Inertial frame of localization map
     // W: Odometry frame of ROVIO
     // M: IMU-coordinate frame
@@ -209,11 +209,9 @@ class LocalizationLandmarkUpdate :
     }
 
     if (innovation != nullptr) {
-      CHECK_NOTNULL(noise);
       Eigen::Vector2d predicted_keypoint(
-        predicted_keypoint_cv.x, predicted_keypoint_cv.y);
-      innovation->pix() = (predicted_keypoint - measurement_.keypoint()) +
-          noise->pix();
+              predicted_keypoint_cv.x, predicted_keypoint_cv.y);
+      innovation->pix() = (predicted_keypoint - measurement_.keypoint());
     }
 
     if (jacobian != nullptr) {
@@ -255,13 +253,15 @@ class LocalizationLandmarkUpdate :
 
   bool evalInnovation(mtInnovation& y, const mtState& state,
                       const mtNoise& noise) const {
-    return evaluateModel(state, &noise, &y, /*jacobian=*/nullptr);
+    bool success = evaluateModel(state,  &y, /*jacobian=*/nullptr);
+    y.pix() += noise.pix();
+    return success;
   }
 
   void jacState(MXD& F, const mtState& state) const {
     CHECK_EQ(F.rows(), mtInnovation::D_);
     CHECK_EQ(F.cols(), mtState::D_);
-    evaluateModel(state, /*noise=*/nullptr, /*innovation=*/nullptr, &F);
+    evaluateModel(state, /*innovation=*/nullptr, &F);
   }
 
   void jacStateFD(MXD& F, const mtState& state, double epsilon = 1e-4,
@@ -304,6 +304,27 @@ class LocalizationLandmarkUpdate :
 
     // Synchronize the camera extrinsics.
     filterstate.state_.updateMultiCameraExtrinsics(multi_cameras_);
+
+    // Visualize the keypoint localization and the localization landmark
+    // reprojection.
+    // TODO(schneith): Disable drawing if visualization is disabled.
+    {
+      cv::Mat image = filterstate.img_[measurement_.camera_index()];
+      cv::circle(image, cv::Point(measurement_.keypoint()(0,0),
+                                  measurement_.keypoint()(1,0)),
+                 /*radius=*/6, /*color=*/cv::Scalar(0,0,255), /*thickness=*/6,
+                 /*line_type=*/cv::LINE_AA, /*shift=*/0);
+
+      mtInnovation innovation;
+      evaluateModel(filterstate.state_, &innovation, /*jacobian=*/nullptr);
+      const Eigen::Vector2d reprojected_landmark =
+          innovation.pix() + measurement_.keypoint();
+      const cv::Point reprojected_landmark_cv(
+          reprojected_landmark(0,0), reprojected_landmark(1,0));
+      cv::circle(image, reprojected_landmark_cv, /*radius=*/3,
+                 /*color=*/cv::Scalar(0,255,0), /*thickness=*/5,
+                 /*line_type=*/cv::LINE_AA, /*shift=*/0);
+    }
 
     // Do not perform additional update loops.
     isFinished = true;
