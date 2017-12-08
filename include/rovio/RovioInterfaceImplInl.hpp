@@ -30,6 +30,7 @@
 #define ROVIO_ROVIO_INTERFACE_IMPL_INL_HPP_
 
 #include <functional>
+#include <iomanip>
 #include <memory>
 #include <queue>
 
@@ -289,6 +290,9 @@ bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
   if (!init_state_.isInitialized()) {
     return false;
   }
+
+  VLOG(5) << "New localization update, timestamp:" << std::setprecision(10)
+          << time_s;
 
   bool measurements_accepted = true;
   for (int meas_idx = 0u; meas_idx < G_landmarks.cols(); ++meas_idx) {
@@ -580,10 +584,7 @@ template <typename FILTER> bool RovioInterfaceImpl<FILTER>::updateFilter() {
   const double t1 = (double)cv::getTickCount();
   const double oldSafeTime = mpFilter_->safe_.t_;
   const int c1 = std::get<0>(mpFilter_->updateTimelineTuple_).measMap_.size();
-  double lastImageTime;
-  if (std::get<0>(mpFilter_->updateTimelineTuple_).getLastTime(lastImageTime)) {
-    mpFilter_->updateSafe(&lastImageTime);
-  }
+  mpFilter_->updateSafe();
   const double t2 = (double)cv::getTickCount();
 
   const int c2 = std::get<0>(mpFilter_->updateTimelineTuple_).measMap_.size();
@@ -621,6 +622,8 @@ template <typename FILTER> bool RovioInterfaceImpl<FILTER>::updateFilter() {
 template <typename FILTER>
 void RovioInterfaceImpl<FILTER>::notifyAllStateUpdateCallbacks(
     const RovioState &state) const {
+  VLOG(5) << "Publishing state at timestamp " << std::setprecision(10)
+          << state.getTimestamp();
   for (const RovioStateCallback &callback : filter_update_state_callbacks_) {
     callback(state);
   }
