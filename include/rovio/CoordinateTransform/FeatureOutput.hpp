@@ -124,11 +124,6 @@ class TransformFeatureOutputCT:public LWF::CoordinateTransform<STATE,FeatureOutp
     CHECK_NOTNULL(input.CfP(ID_).mpCamera_);
     CHECK_GE(input.CfP(ID_).camID_, 0);
 
-    const_cast<mtInput&>(input).CfP(ID_).mpCamera_ = &(mpMultiCamera_->cameras_[0]);
-    const_cast<mtInput&>(input).CfP(ID_).camID_ = 0;
-
-    CHECK_GE(input.CfP(ID_).camID_, 0);
-
     input.updateMultiCameraExtrinsics(mpMultiCamera_);
     mpMultiCamera_->transformFeature(outputCamID_,input.CfP(ID_),input.dep(ID_),output.c(),output.d());
     if(input.CfP(ID_).trackWarping_ && input.CfP(ID_).com_warp_nor()){

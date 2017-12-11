@@ -614,14 +614,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *   @todo sort feature by covariance and use more accurate ones first
    */
   void commonPreProcess(mtFilterState& filterState, const mtMeas& meas){
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
-    }
-
     CHECK(filterState.t_ == meas.aux().imgTime_);
     for(int i=0;i<mtState::nCam_;i++){
       if(doFrameVisualisation_){
@@ -671,14 +663,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         filterState.state_.aux().timeSinceLastImageMotion_ = 0.0;
       }
     }
-
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
-    }
   }
 
   /** \brief Pre-Processing for the image update.
@@ -696,14 +680,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @todo split into methods
    */
   void preProcess(mtFilterState& filterState, const mtMeas& meas, bool& isFinished){
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
-    }
-
     if(isFinished){ // gets called if this is the first call
       commonPreProcess(filterState,meas);
       isFinished = false;
@@ -832,15 +808,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     if(ID >= mtState::nMax_){
       isFinished = true;
     }
-
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
-    }
-  };
+  }
 
   /** \brief Post-Processing for the image update.
    *
@@ -854,14 +822,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @param isFinished       - True, if process has finished.
    */
   void postProcess(mtFilterState& filterState, const mtMeas& meas, const mtOutlierDetection& outlierDetection, bool& isFinished){
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
-    }
-
     int& ID = filterState.state_.aux().activeFeature_;  // Get the ID of the updated feature.
     int& activeCamCounter = filterState.state_.aux().activeCameraCounter_;
 
@@ -972,14 +932,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         ID++;
       }
     }
-
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
-    }
   };
 
   void checkIfFeaturesAreAwesome(mtFilterState& filterState, const std::string& id, bool debug = false) {
@@ -999,7 +951,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         CHECK_LT(camID, 2) << id;
       }
     }
-  }
+  }s
 
   /** \brief Final Post-Processing step for the image update.
    *
@@ -1012,14 +964,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @param meas             - Update measurement.
    */
   void commonPostProcess(mtFilterState& filterState, const mtMeas& meas){
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
-    }
-
     typename mtFilterState::mtState& state = filterState.state_;
     MXD& cov = filterState.cov_;
 
@@ -1227,14 +1171,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         && filterState.state_.aux().timeSinceLastInertialMotion_ > minTimeForZeroVelocityUpdate_){
       cv::putText(filterState.img_[0],"Performing Zero Velocity Updates!",cv::Point2f(150,25),cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,255,255));
       zeroVelocityUpdate_.performUpdateEKF(filterState,ZeroVelocityUpdateMeas<mtState>());
-    }
-
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0);
-        CHECK_LT(camID, 2);
-      }
     }
   }
 
