@@ -503,13 +503,9 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
 
       // Get human readable output
       transformFeatureOutputCT_.setFeatureID(i);
+      CHECK_GE(filterState.fsm_.features_[i].mpCoordinates_->camID_, 0);
       transformFeatureOutputCT_.setOutputCameraID(
           filterState.fsm_.features_[i].mpCoordinates_->camID_);
-      // TODO(dymczykm) Cam ID should be:
-      //   filterState.fsm_.features_[i].mpCoordinates_->camID_
-      // But it seems it's not initialized.
-      CHECK_GE(filterState.fsm_.features_[i].mpCoordinates_->camID_, 0);
-      CHECK_LT(filterState.fsm_.features_[i].mpCoordinates_->camID_, 2);
 
       transformFeatureOutputCT_.transformState(state, featureOutput_);
       transformFeatureOutputCT_.transformCovMat(

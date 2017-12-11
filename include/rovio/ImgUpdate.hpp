@@ -927,25 +927,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     }
   };
 
-  void checkIfFeaturesAreAwesome(mtFilterState& filterState, const std::string& id, bool debug = false) {
-    if (debug) {
-      for(unsigned int i=0;i<mtState::nMax_;i++){
-        LOG(INFO) << i << " " << id << " " << filterState.fsm_.isValid_[i];
-        if(filterState.fsm_.isValid_[i]){
-          LOG(INFO) << "   " << i << " " << filterState.state_.CfP(i).camID_;
-        }
-      }
-    }
-
-    for(unsigned int i=0;i<mtState::nMax_;i++){
-      if(filterState.fsm_.isValid_[i]){
-        const int camID = filterState.state_.CfP(i).camID_;
-        CHECK_GE(camID, 0) << id;
-        CHECK_LT(camID, 2) << id;
-      }
-    }
-  }
-
   /** \brief Final Post-Processing step for the image update.
    *
    *  Summary:
