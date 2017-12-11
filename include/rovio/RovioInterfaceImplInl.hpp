@@ -461,7 +461,7 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
   filter_update->gyb = state.gyb();
   filter_update->acb = state.acb();
 
-  if (false && get_feature_update) {
+  if (get_feature_update) {
     RovioFeatureStateImpl<FILTER> *feature_state_ptr =
         new RovioFeatureStateImpl<FILTER>();
     RovioFeatureStateImpl<FILTER> &feature_state = *feature_state_ptr;
@@ -481,7 +481,6 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
       }
 
       // Get 3D feature coordinates.
-      int camID = filterState.fsm_.features_[i].mpCoordinates_->camID_;
       distance = state.dep(i);
       d = distance.getDistance();
       const double sigma = sqrt(filter_update->filterCovariance(
@@ -504,8 +503,11 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
 
       // Get human readable output
       transformFeatureOutputCT_.setFeatureID(i);
-      transformFeatureOutputCT_.setOutputCameraID(
-          filterState.fsm_.features_[i].mpCoordinates_->camID_);
+      transformFeatureOutputCT_.setOutputCameraID(0);
+      // TODO(dymczykm) Cam ID should be:
+      //   filterState.fsm_.features_[i].mpCoordinates_->camID_
+      // But it seems it's not initialized.
+
       transformFeatureOutputCT_.transformState(state, featureOutput_);
       transformFeatureOutputCT_.transformCovMat(
           state, filter_update->filterCovariance, featureOutputCov_);

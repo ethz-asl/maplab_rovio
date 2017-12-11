@@ -417,6 +417,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     const int& ID = state.aux().activeFeature_;
     const int& camID = state.CfP(ID).camID_;
     const int activeCamID = (state.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+    CHECK_GE(camID, 0);
+    CHECK_GE(activeCamID, 0);
+
     transformFeatureOutputCT_.setFeatureID(ID);
     transformFeatureOutputCT_.setOutputCameraID(activeCamID);
     transformFeatureOutputCT_.transformState(state,featureOutput_);
@@ -457,6 +461,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       const int& ID = candidate.aux().activeFeature_;
       const int& camID = candidate.CfP(ID).camID_;
       const int activeCamID = (candidate.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+      CHECK_GE(camID, 0);
+      CHECK_GE(activeCamID, 0);
+
       transformFeatureOutputCT_.setFeatureID(ID);
       transformFeatureOutputCT_.setOutputCameraID(activeCamID);
       transformFeatureOutputCT_.transformState(candidate,featureOutput_);
@@ -490,6 +498,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     const int& ID = state.aux().activeFeature_;
     const int& camID = state.CfP(ID).camID_;
     const int activeCamID = (state.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+    CHECK_GE(camID, 0);
+    CHECK_GE(activeCamID, 0);
+
     transformFeatureOutputCT_.setFeatureID(ID);
     transformFeatureOutputCT_.setOutputCameraID(activeCamID);
     transformFeatureOutputCT_.transformState(state,featureOutput_);
@@ -559,6 +571,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     const int& ID = state.aux().activeFeature_;
     const int& camID = state.CfP(ID).camID_;
     const int activeCamID = (state.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+    CHECK_GE(camID, 0);
+    CHECK_GE(activeCamID, 0);
+
     transformFeatureOutputCT_.setFeatureID(ID);
     transformFeatureOutputCT_.setOutputCameraID(activeCamID);
     transformFeatureOutputCT_.transformState(state,featureOutput_);
@@ -620,9 +636,12 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       int totCountInMotion = 0;
       for(unsigned int i=0;i<mtState::nMax_;i++){
         if(filterState.fsm_.isValid_[i]){
-          const int& camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
+          // TODO(dymczykm) This camID seems to be uninitialized.
+          //const int& camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
+          const int camID = 0;
+
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
-          tempCoordinates_.camID_ = 0; //camID;
+          tempCoordinates_.camID_ = camID;
           tempCoordinates_.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
           tempCoordinates_.set_warp_identity();
           CHECK_NOTNULL(tempCoordinates_.mpCamera_);
@@ -676,6 +695,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         FeatureManager<mtState::nLevels_,mtState::patchSize_,mtState::nCam_>& f = filterState.fsm_.features_[ID];
         const int camID = f.mpCoordinates_->camID_;
         const int activeCamID = (activeCamCounter + camID)%mtState::nCam_;
+
+        CHECK_GE(camID, 0);
+        CHECK_GE(activeCamID, 0);
+
         drawImg_ = filterState.img_[activeCamID];
         if(activeCamCounter==0){
           f.mpStatistics_->increaseStatistics(filterState.t_);
@@ -804,6 +827,9 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       const int camID = f.mpCoordinates_->camID_;
       const int activeCamID = (activeCamCounter + camID)%mtState::nCam_;
 
+      CHECK_GE(camID, 0);
+      CHECK_GE(activeCamID, 0);
+
       // Remove negative feature
       if(removeNegativeFeatureAfterUpdate_){
         for(unsigned int i=0;i<mtState::nMax_;i++){
@@ -921,6 +947,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         CHECK_NOTNULL(f.mpCoordinates_);
         CHECK_NOTNULL(f.mpCoordinates_->mpCamera_);
         const int camID = f.mpCoordinates_->camID_;
+        CHECK_GE(camID, 0);
+
         if(f.mpStatistics_->trackedInSomeFrame()){
           countTracked++;
         }
@@ -1115,6 +1143,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @param camID       - ID of the camera, in which image the horizon should be drawn.
    */
   void drawVirtualHorizon(mtFilterState& filterState, const int camID = 0){
+    CHECK_GE(camID, 0);
+
     typename mtFilterState::mtState& state = filterState.state_;
     cv::rectangle(filterState.img_[camID],cv::Point2f(0,0),cv::Point2f(82,92),cv::Scalar(50,50,50),-1,8,0);
     cv::rectangle(filterState.img_[camID],cv::Point2f(0,0),cv::Point2f(80,90),cv::Scalar(100,100,100),-1,8,0);
