@@ -723,7 +723,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         // Get coordinates in target frame
         transformFeatureOutputCT_.setFeatureID(ID);
         transformFeatureOutputCT_.setOutputCameraID(activeCamID);
-        CHECK_NOTNULL(state.CfP(ID).mpCamera_); // = &(mpMultiCamera_->cameras_[0]);
+        CHECK_NOTNULL(state.CfP(ID).mpCamera_);
         CHECK_GE(state.CfP(ID).camID_, 0);
         transformFeatureOutputCT_.transformState(state,featureOutput_);
         transformFeatureOutputCT_.transformCovMat(state,cov,featureOutputCov_);
@@ -850,7 +850,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         // Update status and visualization
         transformFeatureOutputCT_.setFeatureID(ID);
         transformFeatureOutputCT_.setOutputCameraID(activeCamID);
-        //filterState.state_.CfP(ID).mpCamera_ = &(mpMultiCamera_->cameras_[0]);
         CHECK_NOTNULL(filterState.state_.CfP(ID).mpCamera_);
         CHECK_GE(filterState.state_.CfP(ID).camID_, 0);
         transformFeatureOutputCT_.transformState(filterState.state_,featureOutput_);
