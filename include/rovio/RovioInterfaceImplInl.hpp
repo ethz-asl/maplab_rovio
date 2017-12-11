@@ -501,10 +501,6 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
       Eigen::Vector3d bearingVector =
           filterState.state_.CfP(i).get_nor().getVec();
 
-      if (filterState.state_.CfP(i).mpCamera_ == nullptr) {
-        continue;
-      }
-
       // Get human readable output
       transformFeatureOutputCT_.setFeatureID(i);
       transformFeatureOutputCT_.setOutputCameraID(

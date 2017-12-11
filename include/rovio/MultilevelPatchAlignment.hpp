@@ -361,7 +361,7 @@ class MultilevelPatchAlignment {
    * @return true, if alignment converged!
    * @todo catch if warping too distorted
    */
-  /*bool align2D_old(FeatureCoordinates& cOut, const ImagePyramid<nLevels>& pyr, const MultilevelPatch<nLevels,patch_size>& mp, const FeatureCoordinates& cInit, const int l1, const int l2,
+  bool align2D_old(FeatureCoordinates& cOut, const ImagePyramid<nLevels>& pyr, const MultilevelPatch<nLevels,patch_size>& mp, const FeatureCoordinates& cInit, const int l1, const int l2,
                    const int maxIter = 10, const double minPixUpd = 0.03){
     Eigen::Matrix2f WInv;
     if(!cInit.com_c() || !cInit.com_warp_c()){
@@ -499,7 +499,7 @@ class MultilevelPatchAlignment {
       }
     }
     return converged;
-  }*/
+  }
 
   /** \brief 2D patch alignment. No guarantee that final coordinates are fully in the frame.
    *

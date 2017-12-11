@@ -827,13 +827,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
 
     if(isFinished){
       commonPostProcess(filterState,meas);
-      for(unsigned int i=0;i<mtState::nMax_;i++){
-        if(filterState.fsm_.isValid_[i]){
-          const int camID = filterState.state_.CfP(i).camID_;
-          CHECK_GE(camID, 0);
-          CHECK_LT(camID, 2);
-        }
-      }
     } else {
       FeatureManager<mtState::nLevels_,mtState::patchSize_,mtState::nCam_>& f = filterState.fsm_.features_[ID];
       const int camID = f.mpCoordinates_->camID_;
@@ -951,7 +944,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         CHECK_LT(camID, 2) << id;
       }
     }
-  }s
+  }
 
   /** \brief Final Post-Processing step for the image update.
    *
@@ -1079,7 +1072,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         std::unordered_set<unsigned int> newSet = filterState.fsm_.addBestCandidates(candidates_,meas.aux().pyr_[camID],camID,filterState.t_,
                                                                     endLevel_,startLevel_,(mtState::nMax_-filterState.fsm_.getValidCount())/(mtState::nCam_-camID),nDetectionBuckets_, scoreDetectionExponent_,
                                                                     penaltyDistance_, zeroDistancePenalty_,false,minAbsoluteSTScore_);
-
         const double t3 = (double) cv::getTickCount();
         if(verbose_) std::cout << "== Got " << filterState.fsm_.getValidCount() << " after adding " << newSet.size() << " features in camera " << camID << " (" << (t3-t2)/cv::getTickFrequency()*1000 << " ms)" << std::endl;
         for(auto it = newSet.begin();it != newSet.end();++it){
