@@ -132,6 +132,8 @@ class FeatureTrackerNode{
     const int numPatchesPlot = 10;
     draw_patches_ = cv::Mat::zeros(numPatchesPlot*(patchSize_*pow(2,nLevels_-1)+4),3*(patchSize_*pow(2,nLevels_-1)+4),CV_8UC1);
 
+    LOG(FATAL);
+
     // Prediction
     cv::Point2f dc;
     for(unsigned int i=0;i<nMax_;i++){

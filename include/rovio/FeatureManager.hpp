@@ -163,6 +163,7 @@ class FeatureSetManager{
   /** \brief Sets all camera pointer in for FeatureCoordinates
    */
   void setAllCameraPointers(){
+    CHECK_NOTNULL(mpMultiCamera_);
     for(unsigned int i=0;i<nMax;i++){
       if(features_[i].mpCoordinates_->camID_ < nCam && features_[i].mpCoordinates_->camID_ >= 0){
         features_[i].mpCoordinates_->mpCamera_ = &mpMultiCamera_->cameras_[features_[i].mpCoordinates_->camID_];
@@ -288,6 +289,9 @@ class FeatureSetManager{
   std::unordered_set<unsigned int> addBestCandidates(const FeatureCoordinatesVec& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
                                                      const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
                                                      const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore){
+    CHECK_GE(camID, 0);
+    CHECK_LT(camID, 2);
+
     std::unordered_set<unsigned int> newFeatureIDs;
     std::vector<MultilevelPatch<nLevels,patchSize>> multilevelPatches;
     multilevelPatches.reserve(candidates.size());
@@ -295,6 +299,9 @@ class FeatureSetManager{
     // Create MultilevelPatches from the candidates list and compute their Shi-Tomasi Score.
     float maxScore = -1.0;
     for(int i=0;i<candidates.size();i++){
+      CHECK_NOTNULL(candidates[i].mpCamera_);
+      CHECK_GE(candidates[i].camID_, 0);
+
       multilevelPatches.emplace_back();
       if(multilevelPatches.back().isMultilevelPatchInFrame(pyr,candidates[i],l2,true)){
         multilevelPatches.back().extractMultilevelPatchFromImage(pyr,candidates[i],l2,true);
@@ -330,6 +337,10 @@ class FeatureSetManager{
     for(unsigned int i=0;i<nMax;i++){
       if(isValid_[i]){
         mpMultiCamera_->transformFeature(camID,*(features_[i].mpCoordinates_),*(features_[i].mpDistance_),featureCoordinates,featureDistance);
+
+        CHECK_NOTNULL(featureCoordinates.mpCamera_);
+        CHECK_GE(featureCoordinates.camID_, 0);
+
         if(featureCoordinates.isInFront()){
           for (unsigned int bucketID = 1;bucketID < nDetectionBuckets;bucketID++) {
             for (auto it_cand = buckets[bucketID].begin();it_cand != buckets[bucketID].end();) {
@@ -365,6 +376,10 @@ class FeatureSetManager{
         features_[ind].mpCoordinates_->set_warp_identity();
         features_[ind].mpCoordinates_->mpCamera_ = &mpMultiCamera_->cameras_[camID];
         *(features_[ind].mpMultilevelPatch_) = multilevelPatches[nf];
+
+        CHECK_NOTNULL(features_[ind].mpCoordinates_->mpCamera_);
+        CHECK_GE(features_[ind].mpCoordinates_->camID_, 0);
+
         if(ind >= 0){
           newFeatureIDs.insert(ind);
         }
@@ -397,9 +412,12 @@ class FeatureSetManager{
     return std::get<1>(mp1).s_ > std::get<1>(mp2).s_;
   }
 
-  std::unordered_set<unsigned int> addBestCandidatesNew(const std::vector<FeatureCoordinates>& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
+  /*std::unordered_set<unsigned int> addBestCandidatesNew(const std::vector<FeatureCoordinates>& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
                                                        const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
                                                        const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore){
+      CHECK_GE(camID, 0);
+      CHECK_LT(camID, 2);
+
       std::unordered_set<unsigned int> newFeatureIDs;
       std::list<std::tuple<const FeatureCoordinates*,MultilevelPatch<nLevels,patchSize>,int>> multilevelPatches;
 
@@ -421,6 +439,8 @@ class FeatureSetManager{
       float maxScore = -1.0;
       for(int i=0;i<candidates.size();i++){
         CHECK_NOTNULL(candidates[i].mpCamera_);
+        CHECK_GE(candidates[i].camID_, 0);
+
         if(MultilevelPatch<nLevels,patchSize>::isMultilevelPatchInFrame(pyr,candidates[i],l2,true)){
           multilevelPatches.emplace_back();
           std::get<1>(multilevelPatches.back()).extractMultilevelPatchFromImage(pyr,candidates[i],l2,true);
@@ -448,6 +468,10 @@ class FeatureSetManager{
       for(unsigned int i=0;i<nMax;i++){
         if(isValid_[i]){
           mpMultiCamera_->transformFeature(camID,*(features_[i].mpCoordinates_),*(features_[i].mpDistance_),featureCoordinates,featureDistance);
+
+          CHECK_NOTNULL(featureCoordinates.mpCamera_);
+          CHECK_GE(featureCoordinates.camID_, 0);
+
           if(featureCoordinates.isInFront()){
             const int xc = featureCoordinates.get_c().x/cellSize;
             const int yc = featureCoordinates.get_c().y/cellSize;
@@ -471,12 +495,16 @@ class FeatureSetManager{
           features_[ind].mpCoordinates_->set_warp_identity();
           features_[ind].mpCoordinates_->mpCamera_ = &mpMultiCamera_->cameras_[camID];
           *(features_[ind].mpMultilevelPatch_) = std::get<1>(*it);
+
+          CHECK_NOTNULL(features_[ind].mpCoordinates_->mpCamera_);
+          CHECK_GE(features_[ind].mpCoordinates_->camID_, 0);
+
           if(ind >= 0){
             newFeatureIDs.insert(ind);
           }
           addedCount++;
 
-          // Increse Bucket weights
+          // Increase bucket weights
           const int xc = bucketID/nCellY;
           const int yc = bucketID%nCellY;
           for(int x=std::max(xc-nRange,0);x<std::min(xc+nRange+1,nCellX);x++){
@@ -488,7 +516,7 @@ class FeatureSetManager{
       }
 
       return newFeatureIDs;
-    }
+    }*/
 };
 
 }

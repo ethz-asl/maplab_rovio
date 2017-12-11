@@ -121,6 +121,9 @@ class TransformFeatureOutputCT:public LWF::CoordinateTransform<STATE,FeatureOutp
   void evalTransform(mtOutput& output, const mtInput& input) const{
     CHECK_NOTNULL(mpMultiCamera_);
 
+    CHECK_NOTNULL(input.CfP(ID_).mpCamera_);
+    CHECK_GE(input.CfP(ID_).camID_, 0);
+
     const_cast<mtInput&>(input).CfP(ID_).mpCamera_ = &(mpMultiCamera_->cameras_[0]);
     const_cast<mtInput&>(input).CfP(ID_).camID_ = 0;
 

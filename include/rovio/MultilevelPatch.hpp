@@ -191,6 +191,8 @@ class MultilevelPatch{
    */
   static bool isMultilevelPatchInFrame(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
     CHECK_NOTNULL(c.mpCamera_);
+    CHECK_GE(c.camID_, 0);
+
     if(!c.isInFront() || !c.com_warp_c()) return false;
     const auto coorTemp = pyr.levelTranformCoordinates(c,0,l);
     return Patch<patchSize>::isPatchInFrame(pyr.imgs_[l],coorTemp,withBorder);
@@ -205,6 +207,9 @@ class MultilevelPatch{
    * @param withBorder  - If true, both, the general patches and the corresponding expanded patches are extracted.
    */
   void extractMultilevelPatchFromImage(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
+    CHECK_NOTNULL(c.mpCamera_);
+    CHECK_GE(c.camID_, 0);
+
     for(unsigned int i=0;i<=l;i++){
       const auto coorTemp = pyr.levelTranformCoordinates(c,0,i);
       isValidPatch_[i] = true;

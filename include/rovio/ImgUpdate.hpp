@@ -464,7 +464,9 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
 
       CHECK_GE(camID, 0);
       CHECK_GE(activeCamID, 0);
-      CHECK_LT(camID, 2);
+      CHECK_LT(camID, 2)  << "This is a temporary check. Remove it when "
+                          << "adapting for multicamera support.";
+
 
       transformFeatureOutputCT_.setFeatureID(ID);
       transformFeatureOutputCT_.setOutputCameraID(activeCamID);
@@ -612,6 +614,14 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *   @todo sort feature by covariance and use more accurate ones first
    */
   void commonPreProcess(mtFilterState& filterState, const mtMeas& meas){
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
+    }
+
     CHECK(filterState.t_ == meas.aux().imgTime_);
     for(int i=0;i<mtState::nCam_;i++){
       if(doFrameVisualisation_){
@@ -637,7 +647,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       for(unsigned int i=0;i<mtState::nMax_;i++){
         if(filterState.fsm_.isValid_[i]){
           const int camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
-          CHECK_GE(camID, 0);
+          CHECK_GE(camID, 0) << " " << CHECK_NOTNULL(filterState.fsm_.features_[i].mpCoordinates_)->camID_;
           CHECK_LT(camID, 2) << "This is a temporary check. Remove it when "
                              << "adapting for multicamera support.";
 
@@ -661,6 +671,14 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         filterState.state_.aux().timeSinceLastImageMotion_ = 0.0;
       }
     }
+
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
+    }
   }
 
   /** \brief Pre-Processing for the image update.
@@ -678,6 +696,14 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @todo split into methods
    */
   void preProcess(mtFilterState& filterState, const mtMeas& meas, bool& isFinished){
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
+    }
+
     if(isFinished){ // gets called if this is the first call
       commonPreProcess(filterState,meas);
       isFinished = false;
@@ -806,6 +832,14 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     if(ID >= mtState::nMax_){
       isFinished = true;
     }
+
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
+    }
   };
 
   /** \brief Post-Processing for the image update.
@@ -820,11 +854,26 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @param isFinished       - True, if process has finished.
    */
   void postProcess(mtFilterState& filterState, const mtMeas& meas, const mtOutlierDetection& outlierDetection, bool& isFinished){
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
+    }
+
     int& ID = filterState.state_.aux().activeFeature_;  // Get the ID of the updated feature.
     int& activeCamCounter = filterState.state_.aux().activeCameraCounter_;
 
     if(isFinished){
       commonPostProcess(filterState,meas);
+      for(unsigned int i=0;i<mtState::nMax_;i++){
+        if(filterState.fsm_.isValid_[i]){
+          const int camID = filterState.state_.CfP(i).camID_;
+          CHECK_GE(camID, 0);
+          CHECK_LT(camID, 2);
+        }
+      }
     } else {
       FeatureManager<mtState::nLevels_,mtState::patchSize_,mtState::nCam_>& f = filterState.fsm_.features_[ID];
       const int camID = f.mpCoordinates_->camID_;
@@ -923,7 +972,34 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         ID++;
       }
     }
+
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
+    }
   };
+
+  void checkIfFeaturesAreAwesome(mtFilterState& filterState, const std::string& id, bool debug = false) {
+    if (debug) {
+      for(unsigned int i=0;i<mtState::nMax_;i++){
+        LOG(INFO) << i << " " << id << " " << filterState.fsm_.isValid_[i];
+        if(filterState.fsm_.isValid_[i]){
+          LOG(INFO) << "   " << i << " " << filterState.state_.CfP(i).camID_;
+        }
+      }
+    }
+
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0) << id;
+        CHECK_LT(camID, 2) << id;
+      }
+    }
+  }
 
   /** \brief Final Post-Processing step for the image update.
    *
@@ -936,6 +1012,14 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @param meas             - Update measurement.
    */
   void commonPostProcess(mtFilterState& filterState, const mtMeas& meas){
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
+    }
+
     typename mtFilterState::mtState& state = filterState.state_;
     MXD& cov = filterState.cov_;
 
@@ -1041,6 +1125,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         }
 
         for (FeatureCoordinates& candidate : candidates_) {
+          CHECK_GE(camID, 0);
           candidate.camID_ = camID;
           candidate.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
         }
@@ -1050,6 +1135,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         std::unordered_set<unsigned int> newSet = filterState.fsm_.addBestCandidates(candidates_,meas.aux().pyr_[camID],camID,filterState.t_,
                                                                     endLevel_,startLevel_,(mtState::nMax_-filterState.fsm_.getValidCount())/(mtState::nCam_-camID),nDetectionBuckets_, scoreDetectionExponent_,
                                                                     penaltyDistance_, zeroDistancePenalty_,false,minAbsoluteSTScore_);
+
         const double t3 = (double) cv::getTickCount();
         if(verbose_) std::cout << "== Got " << filterState.fsm_.getValidCount() << " after adding " << newSet.size() << " features in camera " << camID << " (" << (t3-t2)/cv::getTickFrequency()*1000 << " ms)" << std::endl;
         for(auto it = newSet.begin();it != newSet.end();++it){
@@ -1062,6 +1148,11 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
           initCovFeature_(0,0) = initRelDepthCovTemp_*pow(f.mpDistance_->getParameterDerivative()*f.mpDistance_->getDistance(),2);
           filterState.resetFeatureCovariance(*it,initCovFeature_);
           initCovFeature_(0,0) = initRelDepthCovTemp_;
+
+          CHECK_GE(f.mpCoordinates_->camID_, 0);
+          CHECK_LT(f.mpCoordinates_->camID_, 2);
+          CHECK_NOTNULL(f.mpCoordinates_->mpCamera_);
+
           if(doFrameVisualisation_){
             f.mpCoordinates_->drawPoint(filterState.img_[camID], cv::Scalar(255,0,0));
             f.mpCoordinates_->drawText(filterState.img_[camID],std::to_string(f.idx_),cv::Scalar(255,0,0));
@@ -1136,6 +1227,14 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         && filterState.state_.aux().timeSinceLastInertialMotion_ > minTimeForZeroVelocityUpdate_){
       cv::putText(filterState.img_[0],"Performing Zero Velocity Updates!",cv::Point2f(150,25),cv::FONT_HERSHEY_SIMPLEX, 1.0, cv::Scalar(0,255,255));
       zeroVelocityUpdate_.performUpdateEKF(filterState,ZeroVelocityUpdateMeas<mtState>());
+    }
+
+    for(unsigned int i=0;i<mtState::nMax_;i++){
+      if(filterState.fsm_.isValid_[i]){
+        const int camID = filterState.state_.CfP(i).camID_;
+        CHECK_GE(camID, 0);
+        CHECK_LT(camID, 2);
+      }
     }
   }
 

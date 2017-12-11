@@ -123,7 +123,7 @@ class ImagePyramid{
         cOut.set_warp_c(cIn.get_warp_c());
       }
     }
-    cOut.camID_ = -1;
+    cOut.camID_ = -2;
     cOut.mpCamera_ = nullptr;
     return cOut;
   }

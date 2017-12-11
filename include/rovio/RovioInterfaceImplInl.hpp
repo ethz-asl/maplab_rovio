@@ -239,9 +239,43 @@ bool RovioInterfaceImpl<FILTER>::processImuUpdate(
   const bool measurement_accepted =
       mpFilter_->addPredictionMeas(predictionMeas_, time_s);
 
+  mtFilterState &filterState = mpFilter_->front_;
+  for(unsigned int i=0;i<mtState::nMax_;i++){
+    if(filterState.fsm_.isValid_[i]){
+      const int camID = filterState.state_.CfP(i).camID_;
+      CHECK_GE(camID, 0);
+      CHECK_LT(camID, 2);
+    }
+  }
+  mtFilterState &safe = mpFilter_->safe_;
+  for(unsigned int i=0;i<mtState::nMax_;i++){
+    if(safe.fsm_.isValid_[i]){
+      const int camID = safe.state_.CfP(i).camID_;
+      CHECK_GE(camID, 0);
+      CHECK_LT(camID, 2);
+    }
+  }
+
   if (update_filter) {
     updateFilter();
   }
+
+  for(unsigned int i=0;i<mtState::nMax_;i++){
+    if(filterState.fsm_.isValid_[i]){
+      const int camID = filterState.state_.CfP(i).camID_;
+      CHECK_GE(camID, 0);
+      CHECK_LT(camID, 2);
+    }
+  }
+
+  for(unsigned int i=0;i<mtState::nMax_;i++){
+    if(safe.fsm_.isValid_[i]){
+      const int camID = safe.state_.CfP(i).camID_;
+      CHECK_GE(camID, 0);
+      CHECK_LT(camID, 2);
+    }
+  }
+
   return measurement_accepted;
 }
 
@@ -272,6 +306,15 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
       cv_img, true);
   imgUpdateMeas_.template get<mtImgMeas::_aux>().isValidPyr_[camID] = true;
 
+  mtFilterState &filterState =  mpFilter_->safe_;
+  for(unsigned int i=0;i<mtState::nMax_;i++){
+    if(filterState.fsm_.isValid_[i]){
+      const int camID = filterState.state_.CfP(i).camID_;
+      CHECK_GE(camID, 0);
+      CHECK_LT(camID, 2);
+    }
+  }
+
   bool measurement_accepted = false;
   if (imgUpdateMeas_.template get<mtImgMeas::_aux>().areAllValid()) {
     measurement_accepted =
@@ -279,6 +322,15 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
       imgUpdateMeas_.template get<mtImgMeas::_aux>().reset(msgTime);
     updateFilter();
   }
+
+  for(unsigned int i=0;i<mtState::nMax_;i++){
+    if(filterState.fsm_.isValid_[i]){
+      const int camID = filterState.state_.CfP(i).camID_;
+      CHECK_GE(camID, 0);
+      CHECK_LT(camID, 2);
+    }
+  }
+
   return measurement_accepted;
 }
 
@@ -500,6 +552,10 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
         d_plus = 0;
       Eigen::Vector3d bearingVector =
           filterState.state_.CfP(i).get_nor().getVec();
+
+      if (filterState.state_.CfP(i).mpCamera_ == nullptr) {
+        continue;
+      }
 
       // Get human readable output
       transformFeatureOutputCT_.setFeatureID(i);
