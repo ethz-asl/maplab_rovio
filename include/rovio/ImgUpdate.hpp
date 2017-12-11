@@ -636,17 +636,17 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       int totCountInMotion = 0;
       for(unsigned int i=0;i<mtState::nMax_;i++){
         if(filterState.fsm_.isValid_[i]){
-          // TODO(dymczykm) This camID seems to be uninitialized.
-          //const int& camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
-          CHECK_GE(filterState.state_.CfP(i).camID_, 0);
-          CHECK_LT(filterState.state_.CfP(i).camID_, 2);
-          const int camID = 0;
+          const int camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
+          CHECK_GE(camID, 0);
+          CHECK_LT(camID, 2) << "This is a temporary check. Remove it when "
+                             << "adapting for multicamera support.";
 
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
           tempCoordinates_.camID_ = camID;
           tempCoordinates_.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
-          tempCoordinates_.set_warp_identity();
           CHECK_NOTNULL(tempCoordinates_.mpCamera_);
+          tempCoordinates_.set_warp_identity();
+
           if(mlpTemp1_.isMultilevelPatchInFrame(filterState.prevPyr_[camID],tempCoordinates_,startLevel_,true)){
             mlpTemp1_.extractMultilevelPatchFromImage(filterState.prevPyr_[camID],tempCoordinates_,startLevel_,true);
             mlpTemp1_.computeMultilevelShiTomasiScore(endLevel_,startLevel_);
