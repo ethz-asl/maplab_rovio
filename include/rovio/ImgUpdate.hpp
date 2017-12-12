@@ -1066,7 +1066,9 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
           initCovFeature_(0,0) = initRelDepthCovTemp_;
 
           CHECK_GE(f.mpCoordinates_->camID_, 0);
-          CHECK_LT(f.mpCoordinates_->camID_, 2);
+          CHECK_LT(f.mpCoordinates_->camID_, 2)
+            << "This is a temporary check. Remove it when adapting for "
+            << "multicamera support.";
           CHECK_NOTNULL(f.mpCoordinates_->mpCamera_);
 
           if(doFrameVisualisation_){

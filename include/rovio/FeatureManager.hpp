@@ -290,7 +290,8 @@ class FeatureSetManager{
                                                      const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
                                                      const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore){
     CHECK_GE(camID, 0);
-    CHECK_LT(camID, 2);
+    CHECK_LT(camID, 2) << "This is a temporary check. Remove it when adapting "
+                       << "for multicamera support.";
 
     std::unordered_set<unsigned int> newFeatureIDs;
     std::vector<MultilevelPatch<nLevels,patchSize>> multilevelPatches;
