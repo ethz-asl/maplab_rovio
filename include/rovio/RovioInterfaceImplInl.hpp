@@ -510,7 +510,6 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
       CHECK_GE(filterState.fsm_.features_[i].mpCoordinates_->camID_, 0);
       transformFeatureOutputCT_.setOutputCameraID(
           filterState.fsm_.features_[i].mpCoordinates_->camID_);
-
       transformFeatureOutputCT_.transformState(state, featureOutput_);
       transformFeatureOutputCT_.transformCovMat(
           state, filter_update->filterCovariance, featureOutputCov_);

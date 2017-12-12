@@ -644,8 +644,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
                              << "adapting for multicamera support.";
 
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
-          tempCoordinates_.camID_ = camID;
-          tempCoordinates_.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
+          CHECK_GE(tempCoordinates_.camID_, 0);
           CHECK_NOTNULL(tempCoordinates_.mpCamera_);
           tempCoordinates_.set_warp_identity();
 
