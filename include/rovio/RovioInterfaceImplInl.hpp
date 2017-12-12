@@ -291,8 +291,8 @@ bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
     return false;
   }
 
-  VLOG(5) << "New localization update, timestamp:" << std::setprecision(10)
-          << time_s;
+  VLOG(5) << "New localization update at " << std::setprecision(10)
+          << time_s << " s using " << G_landmarks.cols() << " constraints.";
 
   bool measurements_accepted = true;
   for (int meas_idx = 0u; meas_idx < G_landmarks.cols(); ++meas_idx) {

@@ -148,6 +148,8 @@ class LocalizationLandmarkUpdate :
     : localization_pixel_sigma_(1.0),
       filter_state_memory_(LWF::FilteringMode::ModeEKF),
       force_ekf_updates_(false),
+      enable_calibration_cross_terms_(false),
+      enable_vio_cross_terms_(false),
       multi_cameras_(nullptr) {
     double localization_pixel_sigma;
     Base::doubleRegister_.registerScalar(
@@ -161,6 +163,10 @@ class LocalizationLandmarkUpdate :
     Base::doubleRegister_.removeScalarByStr("UpdateNoise.pix_1");
 
     Base::boolRegister_.registerScalar("forceEKFupdate", force_ekf_updates_);
+    Base::boolRegister_.registerScalar(
+        "enableCalibrationCrossterms", enable_calibration_cross_terms_);
+    Base::boolRegister_.registerScalar(
+        "enableVioCrossterms", enable_vio_cross_terms_);
   }
   virtual ~LocalizationLandmarkUpdate() {}
 
@@ -211,6 +217,7 @@ class LocalizationLandmarkUpdate :
     if (innovation != nullptr) {
       Eigen::Vector2d predicted_keypoint(
               predicted_keypoint_cv.x, predicted_keypoint_cv.y);
+      VLOG(2) << predicted_keypoint.transpose() << " - " << measurement_.keypoint().transpose() << ": " << (predicted_keypoint - measurement_.keypoint()).norm();
       innovation->pix() = (predicted_keypoint - measurement_.keypoint());
     }
 
@@ -219,34 +226,37 @@ class LocalizationLandmarkUpdate :
 
       // d_r__d_T_WG
       const size_t index_WrWG = mtState::template getId<mtState::_pmp>();
-      jacobian->block<2,3>(0, index_WrWG) =
-          d_r__d_C_l * MPD(qCM * state.qWM().inverted()).matrix();
+      jacobian->block<2, 3>(0, index_WrWG) = d_r__d_C_l
+          * MPD(qCM * state.qWM().inverted()).matrix();
 
       const size_t index_qWG = mtState::template getId<mtState::_pma>();
-      jacobian->block<2,3>(0, index_qWG) =
-          -d_r__d_C_l *
-          MPD(qCM * state.qWM().inverted()).matrix() *
-          gSM(state.qWG().rotate(measurement_.G_landmark()));
+      jacobian->block<2, 3>(0, index_qWG) = -d_r__d_C_l
+          * MPD(qCM * state.qWM().inverted()).matrix()
+          * gSM(state.qWG().rotate(measurement_.G_landmark()));
 
       // d_r__d_T_WM
-      const size_t index_WrWM = mtState::template getId<mtState::_pos>();
-      jacobian->block<2,3>(0, index_WrWM) =
-         -d_r__d_C_l * MPD(qCM * state.qWM().inverted()).matrix();
+      if (enable_vio_cross_terms_) {
+        const size_t index_WrWM = mtState::template getId<mtState::_pos>();
+        jacobian->block<2, 3>(0, index_WrWM) = -d_r__d_C_l
+            * MPD(qCM * state.qWM().inverted()).matrix();
 
-      const size_t index_qWM = mtState::template getId<mtState::_att>();
-      jacobian->block<2,3>(0, index_qWM) =
-          d_r__d_C_l * MPD(qCM * state.qWM().inverted()).matrix() *
-          gSM(W_l - state.WrWM());
+        const size_t index_qWM = mtState::template getId<mtState::_att>();
+        jacobian->block<2, 3>(0, index_qWM) = d_r__d_C_l
+            * MPD(qCM * state.qWM().inverted()).matrix()
+            * gSM(W_l - state.WrWM());
+      }
 
       // d_r__d_T_MC
-      const size_t index_MrMC = mtState::template getId<mtState::_vep>() +
-          3u * camera_index;
-      jacobian->block<2,3>(0, index_MrMC) = -d_r__d_C_l * MPD(qCM).matrix();
+      if (enable_calibration_cross_terms_) {
+        const size_t index_MrMC = mtState::template getId<mtState::_vep>()
+            + 3u * camera_index;
+        jacobian->block<2, 3>(0, index_MrMC) = -d_r__d_C_l * MPD(qCM).matrix();
 
-      const size_t index_qCM = mtState::template getId<mtState::_vea>() +
-           3u * camera_index;
-      jacobian->block<2,3>(0, index_qCM) =
-          -d_r__d_C_l * gSM(qCM.rotate(V3D(M_l - MrMC)));
+        const size_t index_qCM = mtState::template getId<mtState::_vea>()
+            + 3u * camera_index;
+        jacobian->block<2, 3>(0, index_qCM) = -d_r__d_C_l
+            * gSM(qCM.rotate(V3D(M_l - MrMC)));
+      }
     }
     return true;
   }
@@ -336,6 +346,8 @@ class LocalizationLandmarkUpdate :
 
   LWF::FilteringMode filter_state_memory_;
   bool force_ekf_updates_;
+  bool enable_calibration_cross_terms_;
+  bool enable_vio_cross_terms_;
 
   // Pointer to the camera models.
   MultiCamera<mtState::nCam_>* multi_cameras_;
