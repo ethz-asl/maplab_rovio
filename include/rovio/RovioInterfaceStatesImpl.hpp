@@ -44,38 +44,38 @@ template <typename FILTER> struct RovioPatchStateImpl : public RovioPatchState {
   virtual ~RovioPatchStateImpl() {}
 
   bool get_isFeatureValid(const int feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return isFeatureValid[feature_idx];
   }
   int get_PatchIndex(const int feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return patchIndices[feature_idx];
   }
   bool get_isPatchValid(const int feature_idx, const int patch_level) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
-    DCHECK_LT(patch_level, kNumPatchLevels);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(patch_level, kNumPatchLevels);
     return isPatchValid[feature_idx][patch_level];
   }
 
   float get_PatchPixel(const int feature_idx, const int patch_level,
                        const int linear_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
-    DCHECK_LT(patch_level, kNumPatchLevels);
-    DCHECK_LT(linear_idx, kPatchArea);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(patch_level, kNumPatchLevels);
+    CHECK_LT(linear_idx, kPatchArea);
     return patches[feature_idx][patch_level].patch_[linear_idx];
   }
   float get_PatchDx(const int feature_idx, const int patch_level,
                     const int linear_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
-    DCHECK_LT(patch_level, kNumPatchLevels);
-    DCHECK_LT(linear_idx, kPatchArea);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(patch_level, kNumPatchLevels);
+    CHECK_LT(linear_idx, kPatchArea);
     return patches[feature_idx][patch_level].dx_[linear_idx];
   }
   float get_PatchDy(const int feature_idx, const int patch_level,
                     const int linear_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
-    DCHECK_LT(patch_level, kNumPatchLevels);
-    DCHECK_LT(linear_idx, kPatchArea);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(patch_level, kNumPatchLevels);
+    CHECK_LT(linear_idx, kPatchArea);
     return patches[feature_idx][patch_level].dy_[linear_idx];
   }
 
@@ -91,53 +91,53 @@ struct RovioFeatureStateImpl : public RovioFeatureState {
   static constexpr int kMaxNumFeatures = FILTER::mtFilterState::mtState::nMax_;
 
   bool get_isFeatureValid(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return isFeatureValid[feature_idx];
   }
 
   int get_FeatureObservrCamID(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return featureObserverCamIDs[feature_idx];
   }
   int get_FeatureIndex(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return featureIndices[feature_idx];
   }
 
   const Eigen::Vector3d &get_CrCPm(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return CrCPm_vec[feature_idx];
   }
   const Eigen::Vector3d &get_CrCPp(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return CrCPp_vec[feature_idx];
   }
 
   const Eigen::Vector3f &get_bearings(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return bearings[feature_idx];
   }
 
   const Eigen::Vector3f &get_MrMP(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return MrMP_vec[feature_idx];
   }
   const Eigen::Matrix3f &get_cov_MrMP(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return cov_MrMP_vec[feature_idx];
   }
 
   float get_Distance(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return distances[feature_idx];
   }
   float get_DistanceCov(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return distances_cov[feature_idx];
   }
 
   uint32_t get_Status(const size_t feature_idx) const {
-    DCHECK_LT(feature_idx, kMaxNumFeatures);
+    CHECK_LT(feature_idx, kMaxNumFeatures);
     return status_vec[feature_idx];
   }
 
@@ -193,13 +193,17 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
     return filterCovariance;
   }
   const kindr::RotationQuaternionPD &get_qCM(size_t camera_index) const {
-    DCHECK_LT(camera_index, kNumCameras);
+    CHECK_LT(camera_index, kNumCameras);
     return qCM[camera_index];
   }
   const Eigen::Vector3d &get_MrMC(size_t camera_index) const {
-    DCHECK_LT(camera_index, kNumCameras);
+    CHECK_LT(camera_index, kNumCameras);
     return MrMC[camera_index];
   }
+  size_t numCameras() const {
+    return kNumCameras;
+  }
+
   const Eigen::Vector3d &get_WrWB() const { return WrWB; }
   const kindr::RotationQuaternionPD &get_qBW() const { return qBW; }
   const Eigen::Vector3d &get_BvB() const { return BvB; }
@@ -216,13 +220,13 @@ template <typename FILTER> struct RovioStateImpl : public RovioState {
 
   bool hasFeatureState() const { return hasFeatureUpdate; }
   const RovioFeatureState &getFeatureState() const {
-    DCHECK(feature_state);
+    CHECK(feature_state);
     return *feature_state;
   }
 
   bool hasPatchState() const { return hasPatchUpdate; }
   const RovioPatchState &getPatchState() const {
-    DCHECK(patch_state);
+    CHECK(patch_state);
     return *patch_state;
   }
 
