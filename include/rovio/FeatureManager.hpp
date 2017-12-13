@@ -413,6 +413,7 @@ class FeatureSetManager{
     return std::get<1>(mp1).s_ > std::get<1>(mp2).s_;
   }
 
+  // Unused code.
   /*std::unordered_set<unsigned int> addBestCandidatesNew(const std::vector<FeatureCoordinates>& candidates, const ImagePyramid<nLevels>& pyr, const int camID, const double initTime,
                                                        const int l1, const int l2, const int maxAddedFeature, const int nDetectionBuckets, const double scoreDetectionExponent,
                                                        const double penaltyDistance, const double zeroDistancePenalty, const bool requireMax, const float minScore){

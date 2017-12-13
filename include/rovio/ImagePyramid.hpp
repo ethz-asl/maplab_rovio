@@ -123,6 +123,7 @@ class ImagePyramid{
         cOut.set_warp_c(cIn.get_warp_c());
       }
     }
+    // Set to invalid value, different from the default constructed invalid value.
     cOut.camID_ = -2;
     cOut.mpCamera_ = nullptr;
     return cOut;
