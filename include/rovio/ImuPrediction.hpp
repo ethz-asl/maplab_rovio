@@ -294,8 +294,7 @@ class ImuPrediction: public LWF::Prediction<FILTERSTATE>{
         const V3D camVel = state.qCM(camID).rotate(V3D(imuRor.cross(state.MrMC(camID))-state.MvM()));
         V3D dm = -dt*(gSM(oldC_.get_nor().getVec())*camVel/oldD_.getDistance()
             + (M3D::Identity()-oldC_.get_nor().getVec()*oldC_.get_nor().getVec().transpose())*camRor);
-        QPD qm;
-        qm = qm.exponentialMap(dm);
+        QPD qm = qm.exponentialMap(dm);
         nOut = oldC_.get_nor().rotated(qm);
         G(mtState::template getId<mtState::_fea>(i)+2,mtNoise::template getId<mtNoise::_fea>(i)+2) = sqrt(dt);
         G.template block<1,3>(mtState::template getId<mtState::_fea>(i)+2,mtNoise::template getId<mtNoise::_att>()) =

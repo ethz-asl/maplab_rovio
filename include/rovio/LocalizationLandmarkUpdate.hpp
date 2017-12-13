@@ -64,7 +64,7 @@ class LocalizationLandmarkMeasurement :
 
   LocalizationLandmarkMeasurement() :
     G_landmark_(Eigen::Vector3d::Zero()),
-    camera_index_(0u) {
+    camera_index_(-1) {
     static_assert(_pix+1==E_,"Error with indices");
   }
   virtual ~LocalizationLandmarkMeasurement() {}
@@ -81,15 +81,16 @@ class LocalizationLandmarkMeasurement :
   inline const V3D& G_landmark() const {
     return G_landmark_;
   }
-  inline size_t& camera_index() {
-    return camera_index_;
+  inline void set_camera_index(int camera_index) {
+    CHECK_GE(camera_index, 0);
+    camera_index_ = camera_index;
   }
-  inline size_t camera_index() const {
+  inline int camera_index() const {
     return camera_index_;
   }
  private:
   Eigen::Vector3d G_landmark_;
-  size_t camera_index_;
+  int camera_index_;
 };
 
 class LocalizationLandmarkNoise : public LWF::State<LWF::VectorElement<2>> {
@@ -148,8 +149,8 @@ class LocalizationLandmarkUpdate :
     : localization_pixel_sigma_(-1.0),
       filter_state_memory_(LWF::FilteringMode::ModeEKF),
       force_ekf_updates_(false),
-      enable_calibration_cross_terms_(false),
-      enable_vio_cross_terms_(false),
+      enable_calibration_cross_terms_(true),
+      enable_vio_cross_terms_(true),
       multi_cameras_(nullptr) {
     double localization_pixel_sigma;
     Base::doubleRegister_.registerScalar(
@@ -194,7 +195,8 @@ class LocalizationLandmarkUpdate :
     // C: Camera frame.
     //
     // Residual: r = f_p(T_CM * T_MW * T_WG * G_l)
-    const size_t camera_index = measurement_.camera_index();
+    const int camera_index = measurement_.camera_index();
+    CHECK_GE(camera_index, 0);
     const QPD& qCM = state.qCM(camera_index);
     const V3D& MrMC = state.MrMC(camera_index);
 
@@ -320,7 +322,9 @@ class LocalizationLandmarkUpdate :
     // reprojection.
     // TODO(schneith): Disable drawing if visualization is disabled.
     {
-      cv::Mat image = filterstate.img_[measurement_.camera_index()];
+      const int camera_index = measurement_.camera_index();
+      CHECK_GE(camera_index, 0);
+      cv::Mat image = filterstate.img_[camera_index];
       cv::circle(image, cv::Point(measurement_.keypoint()(0,0),
                                   measurement_.keypoint()(1,0)),
                  /*radius=*/6, /*color=*/cv::Scalar(0,0,255), /*thickness=*/6,

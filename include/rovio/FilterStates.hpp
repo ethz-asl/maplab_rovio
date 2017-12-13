@@ -159,7 +159,7 @@ class State: public StateBase<nMax, nLevels, patchSize, nCam, nPose, enableMapLo
   /** \brief Constructor
    */
   State(){
-    static_assert(_aux+1==E_,"Error with indices");
+    CHECK(_aux+1==E_) << "Error with indices";
     this->template getName<_pos>() = "pos";
     this->template getName<_vel>() = "vel";
     this->template getName<_acb>() = "acb";
@@ -671,13 +671,14 @@ class FilterState: public LWF::FilterState<
         [](size_t start_index, size_t dim, const Eigen::MatrixXd& new_cov,
            Eigen::MatrixXd* cov) {
       CHECK_NOTNULL(cov);
+      CHECK_GT(dim, 0u);
       CHECK_LE(start_index + dim, cov->rows());
       CHECK_LE(start_index + dim, cov->cols());
       CHECK_EQ(new_cov.rows(), dim);
       CHECK_EQ(new_cov.cols(), dim);
       cov->middleRows(start_index, dim).setZero();
       cov->middleCols(start_index, dim).setZero();
-      cov->block(start_index, start_index, dim , dim) = new_cov;
+      cov->block(start_index, start_index, dim, dim) = new_cov;
     };
     resetCovarianceAtIndex(
         mtState::template getId<mtState::_pmp>(), 3u, position_cov, &cov_);

@@ -186,6 +186,7 @@ double RovioInterfaceImpl<FILTER>::getLastSafeTime() {
 template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processVelocityUpdate(
     const Eigen::Vector3d &AvM, const double time_s) {
+  CHECK_GT(time_s, 0.0);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   if (!init_state_.isInitialized()) {
@@ -205,6 +206,7 @@ template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processImuUpdate(
     const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr,
     const double time_s, bool update_filter) {
+  CHECK_GT(time_s, 0.0);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   predictionMeas_.template get<mtPredictionMeas::_acc>() = acc;
@@ -250,6 +252,7 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
                                                     const double time_s) {
   CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras)
       << "Invalid camID " << camID;
+  CHECK_GT(time_s, 0.0);
 
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   if (!init_state_.isInitialized() || cv_img.empty()) {
@@ -285,8 +288,12 @@ template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
     const int camID, const Eigen::Matrix2Xd& keypoint_observations,
     const Eigen::Matrix3Xd& G_landmarks, const double time_s) {
+  CHECK_GT(camID, 0);
+  CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras);
   CHECK_EQ(keypoint_observations.cols(), G_landmarks.cols());
+  CHECK_GT(time_s, 0.0);
 
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
   if (!init_state_.isInitialized()) {
     return false;
   }
@@ -298,13 +305,13 @@ bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
   for (int meas_idx = 0u; meas_idx < G_landmarks.cols(); ++meas_idx) {
     locLandmarkUpdateMeas_.keypoint() = keypoint_observations.col(meas_idx);
     locLandmarkUpdateMeas_.G_landmark() = G_landmarks.col(meas_idx);
-    locLandmarkUpdateMeas_.camera_index() = camID;
+    locLandmarkUpdateMeas_.set_camera_index(camID);
 
     // The timeline does not take multiple measurements at the same timestamp.
     // Therefore we slightly increase the timestamp for each localization
     // landmark. Such a small deviation should have no effect on the estimation.
     const double timestamp_sec_adapted =
-        time_s + static_cast<double>(meas_idx) * 1.0e-8;
+        time_s + static_cast<double>(meas_idx) * 1.0e-6;
     measurements_accepted &=
         mpFilter_->template addUpdateMeas<3>(
             locLandmarkUpdateMeas_, timestamp_sec_adapted);
@@ -317,6 +324,8 @@ template <typename FILTER>
 void RovioInterfaceImpl<FILTER>::resetLocalizationMapBaseframeAndCovariance(
     const V3D& WrWG, const QPD& qWG, double position_cov,
     double rotation_cov) {
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
+
   CHECK_GT(position_cov, 0.0);
   CHECK_GT(rotation_cov, 0.0);
 

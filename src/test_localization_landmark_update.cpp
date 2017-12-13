@@ -75,19 +75,20 @@ TEST(LocalizationLandmarkUpdate, Jacobian) {
 
     // The keypoint measurement is disturbed to test the computation of the
     // innovation.
-    constexpr double kKeypointDisturbance = 2.5;
+
+    const Eigen::Vector2d kKeypointDisturbance(2.5, 4.5);
 
     Measurement measurement;
     measurement.G_landmark() = G_landmark;
     measurement.keypoint() << keypoint_distorted.x, keypoint_distorted.y;
-    measurement.keypoint() += Eigen::Vector2d::Constant(kKeypointDisturbance);
-    measurement.camera_index() = cam_idx;
+    measurement.keypoint() += kKeypointDisturbance;
+    measurement.set_camera_index(cam_idx);
     update.setMeasurement(measurement);
 
     // The innovation evaluation should yield the disturbance.
     Innovation y;
     update.evalInnovationShort(y, state);
-    EXPECT_TRUE(y.pix().isApproxToConstant(-kKeypointDisturbance));
+    EXPECT_TRUE(y.pix().isApprox(-kKeypointDisturbance));
 
     // Calculate the Jacobian analytically and using finite differences.
     Eigen::MatrixXd J(Innovation::D_, State::D_);
