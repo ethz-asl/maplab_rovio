@@ -47,7 +47,7 @@ class LocalizationLandmarkInnovation : public LWF::State<LWF::VectorElement<2>> 
   static constexpr unsigned int _pix = 0;
 
   LocalizationLandmarkInnovation() {
-    static_assert(_pix+1==E_,"Error with indices");
+    CHECK_EQ(_pix+1,E_) << "Error with indices";
     this->template getName<_pix>() = "pix";
   }
   virtual ~LocalizationLandmarkInnovation() {}
@@ -65,7 +65,7 @@ class LocalizationLandmarkMeasurement :
   LocalizationLandmarkMeasurement() :
     G_landmark_(Eigen::Vector3d::Zero()),
     camera_index_(-1) {
-    static_assert(_pix+1==E_,"Error with indices");
+    CHECK_EQ(_pix+1,E_) << "Error with indices";
   }
   virtual ~LocalizationLandmarkMeasurement() {}
 
