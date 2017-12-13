@@ -156,6 +156,20 @@ class RovioFilter : public RovioFilterBase<FILTERSTATE> {
         std::get<1>(mUpdates_).doubleRegister_.registerScalar("pre_cov_qVM",mPrediction_.prenoiP_(mtPrediction::mtNoise::template getId<mtPrediction::mtNoise::_poa>(std::get<1>(mUpdates_).bodyPoseIndex_)+j,mtPrediction::mtNoise::template getId<mtPrediction::mtNoise::_poa>(std::get<1>(mUpdates_).bodyPoseIndex_)+j));
       }
     }
+    if (mtState::enableMapLocalization_) {
+      for(int j=0;j<3;j++){
+         std::get<3>(mUpdates_).doubleRegister_.registerScalar(
+             "processCovBaseframeTranslation",
+             mPrediction_.prenoiP_(
+                 mtPrediction::mtNoise::template getId<mtPrediction::mtNoise::_pmp>()+j,
+                 mtPrediction::mtNoise::template getId<mtPrediction::mtNoise::_pmp>()+j));
+         std::get<3>(mUpdates_).doubleRegister_.registerScalar(
+             "processCovBaseframeRotation",
+             mPrediction_.prenoiP_(
+                 mtPrediction::mtNoise::template getId<mtPrediction::mtNoise::_pma>()+j,
+                 mtPrediction::mtNoise::template getId<mtPrediction::mtNoise::_pma>()+j));
+       }
+    }
     int ind;
     for(int i=0;i<FILTERSTATE::mtState::nMax_;i++){
       ind = mtState::template getId<mtState::_fea>(i);

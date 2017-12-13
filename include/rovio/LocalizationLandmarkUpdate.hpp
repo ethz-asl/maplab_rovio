@@ -145,7 +145,7 @@ class LocalizationLandmarkUpdate :
   typedef typename Base::mtModelBase mtModelBase;
 
   LocalizationLandmarkUpdate()
-    : localization_pixel_sigma_(1.0),
+    : localization_pixel_sigma_(-1.0),
       filter_state_memory_(LWF::FilteringMode::ModeEKF),
       force_ekf_updates_(false),
       enable_calibration_cross_terms_(false),
@@ -153,7 +153,7 @@ class LocalizationLandmarkUpdate :
       multi_cameras_(nullptr) {
     double localization_pixel_sigma;
     Base::doubleRegister_.registerScalar(
-        "localization_pixel_sigma", localization_pixel_sigma_);
+        "localizationPixelSigma", localization_pixel_sigma_);
 
     // Remove some properties that are inherited from the Update base.
     Base::doubleRegister_.removeScalarByStr("alpha");
@@ -171,6 +171,7 @@ class LocalizationLandmarkUpdate :
   virtual ~LocalizationLandmarkUpdate() {}
 
   void refreshProperties() override {
+    CHECK_GT(localization_pixel_sigma_, 0.0);
     Base::updnoiP_.setZero();
     Base::updnoiP_.diagonal().setConstant(
         localization_pixel_sigma_ * localization_pixel_sigma_);
