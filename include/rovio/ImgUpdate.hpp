@@ -417,6 +417,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     const int& ID = state.aux().activeFeature_;
     const int& camID = state.CfP(ID).camID_;
     const int activeCamID = (state.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+    CHECK_GE(camID, 0);
+    CHECK_GE(activeCamID, 0);
+
     transformFeatureOutputCT_.setFeatureID(ID);
     transformFeatureOutputCT_.setOutputCameraID(activeCamID);
     transformFeatureOutputCT_.transformState(state,featureOutput_);
@@ -457,6 +461,13 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       const int& ID = candidate.aux().activeFeature_;
       const int& camID = candidate.CfP(ID).camID_;
       const int activeCamID = (candidate.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+      CHECK_GE(camID, 0);
+      CHECK_GE(activeCamID, 0);
+      CHECK_LT(camID, 2)  << "This is a temporary check. Remove it when "
+                          << "adapting for multicamera support.";
+
+
       transformFeatureOutputCT_.setFeatureID(ID);
       transformFeatureOutputCT_.setOutputCameraID(activeCamID);
       transformFeatureOutputCT_.transformState(candidate,featureOutput_);
@@ -489,6 +500,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     const int& ID = state.aux().activeFeature_;
     const int& camID = state.CfP(ID).camID_;
     const int activeCamID = (state.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+    CHECK_GE(camID, 0);
+    CHECK_GE(activeCamID, 0);
+
     transformFeatureOutputCT_.setFeatureID(ID);
     transformFeatureOutputCT_.setOutputCameraID(activeCamID);
     transformFeatureOutputCT_.transformState(state,featureOutput_);
@@ -558,6 +573,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     const int& ID = state.aux().activeFeature_;
     const int& camID = state.CfP(ID).camID_;
     const int activeCamID = (state.aux().activeCameraCounter_ + camID)%mtState::nCam_;
+
+    CHECK_GE(camID, 0);
+    CHECK_GE(activeCamID, 0);
+
     transformFeatureOutputCT_.setFeatureID(ID);
     transformFeatureOutputCT_.setOutputCameraID(activeCamID);
     transformFeatureOutputCT_.transformState(state,featureOutput_);
@@ -619,11 +638,16 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       int totCountInMotion = 0;
       for(unsigned int i=0;i<mtState::nMax_;i++){
         if(filterState.fsm_.isValid_[i]){
-          const int& camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
-          tempCoordinates_.camID_ = camID;
-          tempCoordinates_.mpCamera_ = &mpMultiCamera_->cameras_[camID];
+          const int camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
+          CHECK_GE(camID, 0) << " " << CHECK_NOTNULL(filterState.fsm_.features_[i].mpCoordinates_)->camID_;
+          CHECK_LT(camID, 2) << "This is a temporary check. Remove it when "
+                             << "adapting for multicamera support.";
+
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
+          CHECK_GE(tempCoordinates_.camID_, 0);
+          CHECK_NOTNULL(tempCoordinates_.mpCamera_);
           tempCoordinates_.set_warp_identity();
+
           if(mlpTemp1_.isMultilevelPatchInFrame(filterState.prevPyr_[camID],tempCoordinates_,startLevel_,true)){
             mlpTemp1_.extractMultilevelPatchFromImage(filterState.prevPyr_[camID],tempCoordinates_,startLevel_,true);
             mlpTemp1_.computeMultilevelShiTomasiScore(endLevel_,startLevel_);
@@ -674,6 +698,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         FeatureManager<mtState::nLevels_,mtState::patchSize_,mtState::nCam_>& f = filterState.fsm_.features_[ID];
         const int camID = f.mpCoordinates_->camID_;
         const int activeCamID = (activeCamCounter + camID)%mtState::nCam_;
+
+        CHECK_GE(camID, 0);
+        CHECK_GE(activeCamID, 0);
+
         drawImg_ = filterState.img_[activeCamID];
         if(activeCamCounter==0){
           f.mpStatistics_->increaseStatistics(filterState.t_);
@@ -696,6 +724,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         // Get coordinates in target frame
         transformFeatureOutputCT_.setFeatureID(ID);
         transformFeatureOutputCT_.setOutputCameraID(activeCamID);
+        CHECK_NOTNULL(state.CfP(ID).mpCamera_);
+        CHECK_GE(state.CfP(ID).camID_, 0);
         transformFeatureOutputCT_.transformState(state,featureOutput_);
         transformFeatureOutputCT_.transformCovMat(state,cov,featureOutputCov_);
         if(verbose_) std::cout << "    Normal in camera frame: " << featureOutput_.c().get_nor().getVec().transpose() << std::endl;
@@ -777,7 +807,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     if(ID >= mtState::nMax_){
       isFinished = true;
     }
-  };
+  }
 
   /** \brief Post-Processing for the image update.
    *
@@ -801,6 +831,9 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
       const int camID = f.mpCoordinates_->camID_;
       const int activeCamID = (activeCamCounter + camID)%mtState::nCam_;
 
+      CHECK_GE(camID, 0);
+      CHECK_GE(activeCamID, 0);
+
       // Remove negative feature
       if(removeNegativeFeatureAfterUpdate_){
         for(unsigned int i=0;i<mtState::nMax_;i++){
@@ -818,6 +851,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         // Update status and visualization
         transformFeatureOutputCT_.setFeatureID(ID);
         transformFeatureOutputCT_.setOutputCameraID(activeCamID);
+        CHECK_NOTNULL(filterState.state_.CfP(ID).mpCamera_);
+        CHECK_GE(filterState.state_.CfP(ID).camID_, 0);
         transformFeatureOutputCT_.transformState(filterState.state_,featureOutput_);
 
         // Draw information ellipse
@@ -906,6 +941,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     MXD& cov = filterState.cov_;
 
     // Actualize camera extrinsics
+    CHECK_NOTNULL(mpMultiCamera_);
     state.updateMultiCameraExtrinsics(mpMultiCamera_);
 
     int countTracked = 0;
@@ -913,12 +949,17 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     for(unsigned int i=0;i<mtState::nMax_;i++){
       if(filterState.fsm_.isValid_[i]){
         FeatureManager<mtState::nLevels_,mtState::patchSize_,mtState::nCam_>& f = filterState.fsm_.features_[i];
+        CHECK_NOTNULL(f.mpCoordinates_);
+        CHECK_NOTNULL(f.mpCoordinates_->mpCamera_);
         const int camID = f.mpCoordinates_->camID_;
+        CHECK_GE(camID, 0);
+
         if(f.mpStatistics_->trackedInSomeFrame()){
           countTracked++;
         }
         if(f.mpStatistics_->status_[camID] == TRACKED && filterState.t_ - f.mpStatistics_->lastPatchUpdate_ > minTimeBetweenPatchUpdate_){
           tempCoordinates_ = *f.mpCoordinates_;
+          CHECK_NOTNULL(tempCoordinates_.mpCamera_);
           tempCoordinates_.set_warp_identity();
           if(mlpTemp1_.isMultilevelPatchInFrame(meas.aux().pyr_[camID],tempCoordinates_,startLevel_,true)){
             mlpTemp1_.extractMultilevelPatchFromImage(meas.aux().pyr_[camID],tempCoordinates_,startLevel_,true);
@@ -999,6 +1040,13 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         for(int l=endLevel_;l<=startLevel_;l++){
           meas.aux().pyr_[camID].detectFastCorners(candidates_,l,fastDetectionThreshold_);
         }
+
+        for (FeatureCoordinates& candidate : candidates_) {
+          CHECK_GE(camID, 0);
+          candidate.camID_ = camID;
+          candidate.mpCamera_ = CHECK_NOTNULL(&mpMultiCamera_->cameras_[camID]);
+        }
+
         const double t2 = (double) cv::getTickCount();
         if(verbose_) std::cout << "== Detected " << candidates_.size() << " on levels " << endLevel_ << "-" << startLevel_ << " (" << (t2-t1)/cv::getTickFrequency()*1000 << " ms)" << std::endl;
         std::unordered_set<unsigned int> newSet = filterState.fsm_.addBestCandidates(candidates_,meas.aux().pyr_[camID],camID,filterState.t_,
@@ -1016,6 +1064,13 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
           initCovFeature_(0,0) = initRelDepthCovTemp_*pow(f.mpDistance_->getParameterDerivative()*f.mpDistance_->getDistance(),2);
           filterState.resetFeatureCovariance(*it,initCovFeature_);
           initCovFeature_(0,0) = initRelDepthCovTemp_;
+
+          CHECK_GE(f.mpCoordinates_->camID_, 0);
+          CHECK_LT(f.mpCoordinates_->camID_, 2)
+            << "This is a temporary check. Remove it when adapting for "
+            << "multicamera support.";
+          CHECK_NOTNULL(f.mpCoordinates_->mpCamera_);
+
           if(doFrameVisualisation_){
             f.mpCoordinates_->drawPoint(filterState.img_[camID], cv::Scalar(255,0,0));
             f.mpCoordinates_->drawText(filterState.img_[camID],std::to_string(f.idx_),cv::Scalar(255,0,0));
@@ -1101,6 +1156,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
    *  @param camID       - ID of the camera, in which image the horizon should be drawn.
    */
   void drawVirtualHorizon(mtFilterState& filterState, const int camID = 0){
+    CHECK_GE(camID, 0);
+
     typename mtFilterState::mtState& state = filterState.state_;
     cv::rectangle(filterState.img_[camID],cv::Point2f(0,0),cv::Point2f(82,92),cv::Scalar(50,50,50),-1,8,0);
     cv::rectangle(filterState.img_[camID],cv::Point2f(0,0),cv::Point2f(80,90),cv::Scalar(100,100,100),-1,8,0);
