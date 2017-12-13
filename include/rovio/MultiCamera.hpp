@@ -76,7 +76,7 @@ class MultiCamera{
 
   /** \brief Transforms feature coordinates from one camera frame to another
    *
-   *   @param u - Camera index of output frame
+   *   @param i - Camera index of output frame
    *   @param cIn - Feature coordinates to be transformed
    *   @param dIn - Corresponding distance
    *   @param cOut - Transformed feature coordinates

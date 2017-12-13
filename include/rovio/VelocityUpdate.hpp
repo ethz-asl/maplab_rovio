@@ -163,8 +163,9 @@ class VelocityUpdate: public LWF::Update<VelocityInnovation,FILTERSTATE,Velocity
    *  @param noise        - Additive discrete Gaussian noise.
    *  @param dt           - Not used.
    */
-  void evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
+  bool evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
     y.vel() = qAM_.rotate(state.MvM()) + meas_.vel() + noise.vel(); // Velocity of state has a minus sign
+    return true;
   }
 
   /** \brief Computes the Jacobian for the update step of the filter.

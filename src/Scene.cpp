@@ -1,3 +1,4 @@
+#include <glog/logging.h>
 #include <rovio/Scene.hpp>
 
 namespace rovio{
@@ -558,8 +559,8 @@ namespace rovio{
 
     V_TF_B_location_ = glGetUniformLocation(ShaderProgram, "V_TF_B");
     W_TF_B_location_ = glGetUniformLocation(ShaderProgram, "W_TF_B");
-    assert(V_TF_B_location_ != 0xFFFFFFFF);
-    assert(W_TF_B_location_ != 0xFFFFFFFF);
+    CHECK((V_TF_B_location_ != 0xFFFFFFFF);
+    CHECK(W_TF_B_location_ != 0xFFFFFFFF);
 
 
     lightColor_location_ = glGetUniformLocation(ShaderProgram, "gDirectionalLight.Color");
@@ -568,12 +569,12 @@ namespace rovio{
     lightDirection_location_ = glGetUniformLocation(ShaderProgram, "gDirectionalLight.Direction");
     useTexture_location_ = glGetUniformLocation(ShaderProgram, "useTexture");
     sampler_location_ = glGetUniformLocation(ShaderProgram, "gSampler");
-    assert(lightColor_location_ != 0xFFFFFFFF);
-    assert(lightAmbientIntensity_location_ != 0xFFFFFFFF);
-    assert(lightDiffuseIntensity_location_ != 0xFFFFFFFF);
-    assert(lightDirection_location_ != 0xFFFFFFFF);
-    assert(useTexture_location_ != 0xFFFFFFFF);
-    assert(sampler_location_ != 0xFFFFFFFF);
+    CHECK(lightColor_location_ != 0xFFFFFFFF);
+    CHECK(lightAmbientIntensity_location_ != 0xFFFFFFFF);
+    CHECK(lightDiffuseIntensity_location_ != 0xFFFFFFFF);
+    CHECK(lightDirection_location_ != 0xFFFFFFFF);
+    CHECK(useTexture_location_ != 0xFFFFFFFF);
+    CHECK(sampler_location_ != 0xFFFFFFFF);
   }
   void Scene::setIdleFunction(void (*idleFunc)()){
     mIdleFunc = idleFunc;

@@ -141,8 +141,9 @@ ZeroVelocityUpdateNoise<typename FILTERSTATE::mtState>,ZeroVelocityOutlierDetect
    *  @param noise        - Additive discrete Gaussian noise.
    *  @param dt           - Not used.
    */
-  void evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
+  bool evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
     y.template get<mtInnovation::_vel>() = state.MvM()+noise.template get<mtInnovation::_vel>();
+    return true;
   }
 
   /** \brief Computes the Jacobian for the update step of the filter.

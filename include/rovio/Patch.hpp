@@ -29,6 +29,8 @@
 #ifndef ROVIO_PATCH_HPP_
 #define ROVIO_PATCH_HPP_
 
+#include <glog/logging.h>
+
 #include "lightweight_filtering/common.hpp"
 #include "rovio/FeatureCoordinates.hpp"
 
@@ -238,7 +240,7 @@ class Patch {
    *                       and the patch data of the expanded patch (Patch::patchWithBorder_).
    */
   void extractPatchFromImage(const cv::Mat& img,const FeatureCoordinates& c,const bool withBorder = false){
-    assert(isPatchInFrame(img,c,withBorder));
+    CHECK(isPatchInFrame(img,c,withBorder));
     const int halfpatch_size = patchSize/2+(int)withBorder;
     const int refStep = img.step.p[0];
 

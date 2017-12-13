@@ -87,6 +87,7 @@ struct RovioState {
   virtual const Eigen::Vector3d &get_MrMC(size_t camera_index) const = 0;
   virtual const kindr::RotationQuaternionPD &
   get_qCM(size_t camera_index) const = 0;
+  virtual size_t numCameras() const = 0;
 
   virtual const Eigen::Vector3d &get_WrWB() const = 0;
   virtual const kindr::RotationQuaternionPD &get_qBW() const = 0;
@@ -102,6 +103,10 @@ struct RovioState {
   virtual bool getHasInertialPose() const = 0;
   virtual const Eigen::Vector3d &get_IrIW() const = 0;
   virtual const kindr::RotationQuaternionPD &get_qWI() const = 0;
+
+  virtual bool getHasMapLocalizationPose() const = 0;
+  virtual const Eigen::Vector3d &get_WrWG() const = 0;
+  virtual const kindr::RotationQuaternionPD &get_qWG() const = 0;
 
   virtual bool hasFeatureState() const = 0;
   virtual const RovioFeatureState &getFeatureState() const = 0;
