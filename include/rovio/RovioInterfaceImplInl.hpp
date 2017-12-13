@@ -188,7 +188,7 @@ double RovioInterfaceImpl<FILTER>::getLastSafeTime() {
 template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processVelocityUpdate(
     const Eigen::Vector3d &AvM, const double time_s) {
-  CHECK_GT(time_s, 0.0);
+  CHECK_GE(time_s, 0.0);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   if (!init_state_.isInitialized()) {
@@ -208,7 +208,7 @@ template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processImuUpdate(
     const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr,
     const double time_s, bool update_filter) {
-  CHECK_GT(time_s, 0.0);
+  CHECK_GE(time_s, 0.0);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   predictionMeas_.template get<mtPredictionMeas::_acc>() = acc;
@@ -254,7 +254,7 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
                                                     const double time_s) {
   CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras)
       << "Invalid camID " << camID;
-  CHECK_GT(time_s, 0.0);
+  CHECK_GE(time_s, 0.0);
 
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   if (!init_state_.isInitialized() || cv_img.empty()) {
@@ -290,10 +290,10 @@ template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
     const int camID, const Eigen::Matrix2Xd& keypoint_observations,
     const Eigen::Matrix3Xd& G_landmarks, const double time_s) {
-  CHECK_GT(camID, 0);
+  CHECK_GE(camID, 0);
   CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras);
   CHECK_EQ(keypoint_observations.cols(), G_landmarks.cols());
-  CHECK_GT(time_s, 0.0);
+  CHECK_GE(time_s, 0.0);
 
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   if (!init_state_.isInitialized()) {
