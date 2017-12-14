@@ -464,9 +464,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
 
       CHECK_GE(camID, 0);
       CHECK_GE(activeCamID, 0);
-      CHECK_LT(camID, 2)  << "This is a temporary check. Remove it when "
-                          << "adapting for multicamera support.";
-
 
       transformFeatureOutputCT_.setFeatureID(ID);
       transformFeatureOutputCT_.setOutputCameraID(activeCamID);
@@ -640,8 +637,6 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         if(filterState.fsm_.isValid_[i]){
           const int camID = filterState.state_.CfP(i).camID_;   // Camera ID of the feature.
           CHECK_GE(camID, 0) << " " << CHECK_NOTNULL(filterState.fsm_.features_[i].mpCoordinates_)->camID_;
-          CHECK_LT(camID, 2) << "This is a temporary check. Remove it when "
-                             << "adapting for multicamera support.";
 
           tempCoordinates_ = *filterState.fsm_.features_[i].mpCoordinates_;
           CHECK_GE(tempCoordinates_.camID_, 0);
