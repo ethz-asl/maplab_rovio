@@ -109,12 +109,21 @@ struct FilterConfiguration : public boost::property_tree::ptree {
   CAMERA_GETTER_AND_SETTER(MrMC_z, MrMC_z, double);
 
   // IMU prediction noise.
+  // Covariance parameter for position prediction [m^2/s].
+  GETTER_AND_SETTER(
+      PositionCovarianceX, Prediction.PredictionNoise.pos_0, double);
+  GETTER_AND_SETTER(
+      PositionCovarianceY, Prediction.PredictionNoise.pos_1, double);
+  GETTER_AND_SETTER(
+      PositionCovarianceZ, Prediction.PredictionNoise.pos_2, double);
+
   // Covariance parameter of attitude prediction [rad^2/s].
   GETTER_AND_SETTER(
       GyroCovarianceX, Prediction.PredictionNoise.att_0, double);
   GETTER_AND_SETTER(
       GyroCovarianceY, Prediction.PredictionNoise.att_1, double);
-  GETTER_AND_SETTER(GyroCovarianceZ, Prediction.PredictionNoise.att_2, double);
+  GETTER_AND_SETTER(
+      GyroCovarianceZ, Prediction.PredictionNoise.att_2, double);
   // Covariance parameter of gyroscope bias prediction [rad^2/s^3].
   GETTER_AND_SETTER(
       GyroBiasCovarianceX, Prediction.PredictionNoise.gyb_0, double);
