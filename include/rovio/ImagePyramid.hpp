@@ -114,7 +114,7 @@ class ImagePyramid{
    * @return the corresponding pixel coordinates on pyramid level l2.
    */
   FeatureCoordinates levelTranformCoordinates(const FeatureCoordinates& cIn, const int l1, const int l2) const{
-    assert(l1<n_levels && l2<n_levels && l1>=0 && l2>=0);
+    CHECK(l1<n_levels && l2<n_levels && l1>=0 && l2>=0);
 
     FeatureCoordinates cOut;
     cOut.set_c((centers_[l1]-centers_[l2])*pow(0.5,l2)+cIn.get_c()*pow(0.5,l2-l1));
@@ -123,7 +123,8 @@ class ImagePyramid{
         cOut.set_warp_c(cIn.get_warp_c());
       }
     }
-    cOut.camID_ = -1;
+    // Set to invalid value, different from the default constructed invalid value.
+    cOut.camID_ = -2;
     cOut.mpCamera_ = nullptr;
     return cOut;
   }

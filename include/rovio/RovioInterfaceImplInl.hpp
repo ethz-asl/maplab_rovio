@@ -30,6 +30,7 @@
 #define ROVIO_ROVIO_INTERFACE_IMPL_INL_HPP_
 
 #include <functional>
+#include <iomanip>
 #include <memory>
 #include <queue>
 
@@ -48,7 +49,7 @@ namespace rovio {
 template <typename FILTER>
 RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
     typename std::shared_ptr<mtFilter> mpFilter)
-    : mpFilter_(mpFilter), transformFeatureOutputCT_(&mpFilter->multiCamera_),
+    : mpFilter_(mpFilter), transformFeatureOutputCT_(CHECK_NOTNULL(&mpFilter->multiCamera_)),
       landmarkOutputImuCT_(&mpFilter->multiCamera_),
       cameraOutputCov_((int)(mtOutput::D_), (int)(mtOutput::D_)),
       featureOutputCov_((int)(FeatureOutput::D_), (int)(FeatureOutput::D_)),
@@ -57,6 +58,9 @@ RovioInterfaceImpl<FILTER>::RovioInterfaceImpl(
                                 (int)(FeatureOutputReadable::D_)) {
   mpImgUpdate_ = CHECK_NOTNULL(&std::get<0>(mpFilter_->mUpdates_));
   mpPoseUpdate_ = CHECK_NOTNULL(&std::get<1>(mpFilter_->mUpdates_));
+  mpLocLandmarkUpdate_ = CHECK_NOTNULL(&std::get<3>(mpFilter_->mUpdates_));
+
+  CHECK_NOTNULL(&mpFilter->multiCamera_);
 }
 
 template <typename FILTER>
@@ -184,6 +188,7 @@ double RovioInterfaceImpl<FILTER>::getLastSafeTime() {
 template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processVelocityUpdate(
     const Eigen::Vector3d &AvM, const double time_s) {
+  CHECK_GE(time_s, 0.0);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   if (!init_state_.isInitialized()) {
@@ -203,6 +208,7 @@ template <typename FILTER>
 bool RovioInterfaceImpl<FILTER>::processImuUpdate(
     const Eigen::Vector3d &acc, const Eigen::Vector3d &gyr,
     const double time_s, bool update_filter) {
+  CHECK_GE(time_s, 0.0);
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
 
   predictionMeas_.template get<mtPredictionMeas::_acc>() = acc;
@@ -248,6 +254,7 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
                                                     const double time_s) {
   CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras)
       << "Invalid camID " << camID;
+  CHECK_GE(time_s, 0.0);
 
   std::lock_guard<std::recursive_mutex> lock(m_filter_);
   if (!init_state_.isInitialized() || cv_img.empty()) {
@@ -277,6 +284,66 @@ bool RovioInterfaceImpl<FILTER>::processImageUpdate(const int camID,
     updateFilter();
   }
   return measurement_accepted;
+}
+
+template <typename FILTER>
+bool RovioInterfaceImpl<FILTER>::processLocalizationLandmarkUpdates(
+    const int camID, const Eigen::Matrix2Xd& keypoint_observations,
+    const Eigen::Matrix3Xd& G_landmarks, const double time_s) {
+  CHECK_GE(camID, 0);
+  CHECK_LT(camID, RovioStateImpl<FILTER>::kNumCameras);
+  CHECK_EQ(keypoint_observations.cols(), G_landmarks.cols());
+  CHECK_GE(time_s, 0.0);
+
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
+  if (!init_state_.isInitialized()) {
+    return false;
+  }
+
+  VLOG(5) << "New localization update at " << std::setprecision(10)
+          << time_s << " s using " << G_landmarks.cols() << " constraints.";
+
+  bool measurements_accepted = true;
+  for (int meas_idx = 0u; meas_idx < G_landmarks.cols(); ++meas_idx) {
+    locLandmarkUpdateMeas_.keypoint() = keypoint_observations.col(meas_idx);
+    locLandmarkUpdateMeas_.G_landmark() = G_landmarks.col(meas_idx);
+    locLandmarkUpdateMeas_.set_camera_index(camID);
+
+    // The timeline does not take multiple measurements at the same timestamp.
+    // Therefore we slightly increase the timestamp for each localization
+    // landmark. Such a small deviation should have no effect on the estimation.
+    const double timestamp_sec_adapted =
+        time_s + static_cast<double>(meas_idx) * 1.0e-6;
+    measurements_accepted &=
+        mpFilter_->template addUpdateMeas<3>(
+            locLandmarkUpdateMeas_, timestamp_sec_adapted);
+    updateFilter();
+  }
+  return measurements_accepted;
+}
+
+template <typename FILTER>
+void RovioInterfaceImpl<FILTER>::resetLocalizationMapBaseframeAndCovariance(
+    const V3D& WrWG, const QPD& qWG, double position_cov,
+    double rotation_cov) {
+  std::lock_guard<std::recursive_mutex> lock(m_filter_);
+
+  CHECK_GT(position_cov, 0.0);
+  CHECK_GT(rotation_cov, 0.0);
+
+  Eigen::Matrix3d mat_position_cov = Eigen::Matrix3d::Zero();
+  mat_position_cov.diagonal().setConstant(position_cov);
+  Eigen::Matrix3d mat_rotation_cov = Eigen::Matrix3d::Zero();
+  mat_rotation_cov.diagonal().setConstant(rotation_cov);
+
+  std::vector<typename FILTER::mtFilterState*> states{&mpFilter_->safe_,
+    &mpFilter_->front_, &mpFilter_->init_};
+  for (typename FILTER::mtFilterState* state : states) {
+    state->resetLocalizationMapBaseframeCovariance(
+        mat_position_cov, mat_rotation_cov);
+    state->state_.qWG() = qWG;
+    state->state_.WrWG() = WrWG;
+  }
 }
 
 template <typename FILTER>
@@ -362,6 +429,7 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
   mtState &state = mpFilter_->safe_.state_;
 
   // Get camera extrinsics.
+  CHECK_NOTNULL(&mpFilter_->multiCamera_);
   state.updateMultiCameraExtrinsics(&mpFilter_->multiCamera_);
   for (unsigned int i = 0u; i < mtState::nCam_; ++i) {
     filter_update->MrMC[i] = state.MrMC(i);
@@ -375,6 +443,14 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
     filter_update->hasInertialPose = true;
     filter_update->IrIW = state.poseLin(mpPoseUpdate_->inertialPoseIndex_);
     filter_update->qWI = state.poseRot(mpPoseUpdate_->inertialPoseIndex_);
+  }
+
+  // Transformation between localization-map frame (G) and the odometry world
+  // frame (W).
+  if (mtState::enableMapLocalization_) {
+    filter_update->hasMapLocalizationPose = true;
+    filter_update->WrWG = state.WrWG();
+    filter_update->qWG = state.qWG();
   }
 
   // IMU state and IMU covariance.
@@ -418,7 +494,6 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
       }
 
       // Get 3D feature coordinates.
-      int camID = filterState.fsm_.features_[i].mpCoordinates_->camID_;
       distance = state.dep(i);
       d = distance.getDistance();
       const double sigma = sqrt(filter_update->filterCovariance(
@@ -441,6 +516,7 @@ bool RovioInterfaceImpl<FILTER>::getState(const bool get_feature_update,
 
       // Get human readable output
       transformFeatureOutputCT_.setFeatureID(i);
+      CHECK_GE(filterState.fsm_.features_[i].mpCoordinates_->camID_, 0);
       transformFeatureOutputCT_.setOutputCameraID(
           filterState.fsm_.features_[i].mpCoordinates_->camID_);
       transformFeatureOutputCT_.transformState(state, featureOutput_);
@@ -520,10 +596,7 @@ template <typename FILTER> bool RovioInterfaceImpl<FILTER>::updateFilter() {
   const double t1 = (double)cv::getTickCount();
   const double oldSafeTime = mpFilter_->safe_.t_;
   const int c1 = std::get<0>(mpFilter_->updateTimelineTuple_).measMap_.size();
-  double lastImageTime;
-  if (std::get<0>(mpFilter_->updateTimelineTuple_).getLastTime(lastImageTime)) {
-    mpFilter_->updateSafe(&lastImageTime);
-  }
+  mpFilter_->updateSafe();
   const double t2 = (double)cv::getTickCount();
 
   const int c2 = std::get<0>(mpFilter_->updateTimelineTuple_).measMap_.size();
@@ -561,6 +634,8 @@ template <typename FILTER> bool RovioInterfaceImpl<FILTER>::updateFilter() {
 template <typename FILTER>
 void RovioInterfaceImpl<FILTER>::notifyAllStateUpdateCallbacks(
     const RovioState &state) const {
+  VLOG(5) << "Publishing state at timestamp " << std::setprecision(10)
+          << state.getTimestamp();
   for (const RovioStateCallback &callback : filter_update_state_callbacks_) {
     callback(state);
   }
