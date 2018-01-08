@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 project(rovio)
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/OptimizeForArchitecture.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/DetectSIMD.cmake)
 set(ROVIO_NMAXFEATURE 25 CACHE STRING "Number of features for ROVIO")
 set(ROVIO_NCAM 1 CACHE STRING "Number of enabled cameras")
 set(ROVIO_NLEVELS 4 CACHE STRING "Number of image leavels for the features")
