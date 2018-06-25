@@ -46,7 +46,7 @@ class MultilevelPatch{
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  static const int nLevels_ = nLevels;  /**<Number of pyramid levels on which the feature is defined.*/
+  static constexpr int nLevels_ = nLevels;  /**<Number of pyramid levels on which the feature is defined.*/
   Patch<patchSize> patches_[nLevels_];  /**<Array, holding the patches on each pyramid level.*/
   bool isValidPatch_[nLevels_];  /**<Array, specifying if there is a valid patch stored at the corresponding location in \ref patches_.*/
   mutable Eigen::Matrix3f H_;  /**<Hessian matrix, corresponding to the multilevel patches.*/
