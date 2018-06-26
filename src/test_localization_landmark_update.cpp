@@ -90,12 +90,15 @@ TEST(LocalizationLandmarkUpdate, Jacobian) {
     update.evalInnovationShort(y, state);
     EXPECT_TRUE(y.pix().isApprox(-kKeypointDisturbance));
 
+    static constexpr unsigned int kDimState = State::D_;
+    static constexpr unsigned int kDimInnovation = Innovation::D_;
+
     // Calculate the Jacobian analytically and using finite differences.
-    Eigen::MatrixXd J(Innovation::D_, State::D_);
+    Eigen::MatrixXd J(kDimInnovation, kDimState);
     update.jacState(J, state);
 
     double epsilon = 1e-4;
-    Eigen::MatrixXd J_FD(Innovation::D_, State::D_);
+    Eigen::MatrixXd J_FD(kDimInnovation, kDimState);
     update.jacStateFD(J_FD, state, epsilon);
 
     // Compare the two Jacobians.

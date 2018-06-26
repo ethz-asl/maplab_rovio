@@ -10,13 +10,13 @@ using namespace rovio;
 
 class MLPTesting : public virtual ::testing::Test {
  protected:
-  static const int nLevels_ = 2;
-  static const int patchSize_ = 2;
-  static const int imgSize_ = (patchSize_+2)*pow(2,nLevels_-1)+4;
-  static const int nMax_ = 20;
-  static const int nCam_ = 2;
-  static const int dx_ = 2;
-  static const int dy_ = 3;
+  static constexpr int nLevels_ = 2;
+  static constexpr int patchSize_ = 2;
+  static constexpr int imgSize_ = (patchSize_+2)*pow(2,nLevels_-1)+4;
+  static constexpr int nMax_ = 20;
+  static constexpr int nCam_ = 2;
+  static constexpr int dx_ = 2;
+  static constexpr int dy_ = 3;
 
   ImagePyramid<nLevels_> pyr1_;
   ImagePyramid<nLevels_> pyr2_;

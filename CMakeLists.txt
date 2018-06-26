@@ -157,7 +157,7 @@ if(CATKIN_ENABLE_TESTING)
 	target_link_libraries(test_mlp gtest_main gtest pthread ${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${glog_catkin_LIBRARIES})
 	add_test(test_mlp test_mlp)
 
-	 add_executable(test_llu src/test_localization_landmark_update.cpp)
+	add_executable(test_llu src/test_localization_landmark_update.cpp)
   target_link_libraries(test_llu gtest_main gtest pthread ${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${glog_catkin_LIBRARIES})
   add_test(test_llu test_llu)
 endif()
