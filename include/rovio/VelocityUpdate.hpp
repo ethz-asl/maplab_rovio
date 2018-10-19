@@ -128,6 +128,7 @@ class VelocityUpdate: public LWF::Update<VelocityInnovation,FILTERSTATE,Velocity
   using Base::doubleRegister_;
   using Base::intRegister_;
   using Base::meas_;
+  using Base::disablePreAndPostProcessingWarning_;
   typedef typename Base::mtState mtState;
   typedef typename Base::mtFilterState mtFilterState;
   typedef typename Base::mtInnovation mtInnovation;
@@ -149,6 +150,7 @@ class VelocityUpdate: public LWF::Update<VelocityInnovation,FILTERSTATE,Velocity
     doubleRegister_.removeScalarByStr("kappa");
     doubleRegister_.removeScalarByStr("updateVecNormTermination");
     doubleRegister_.registerQuaternion("qAM",qAM_);
+    disablePreAndPostProcessingWarning_ = true;
   };
 
   /** \brief Destructor
