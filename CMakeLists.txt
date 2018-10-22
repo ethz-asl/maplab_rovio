@@ -156,3 +156,14 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/gtest/")
 	target_link_libraries(test_mlp gtest_main gtest pthread ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES})
 	add_test(test_mlp test_mlp)
 endif()
+
+# Setting for make install
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+install(TARGETS ${PROJECT_NAME}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+install(TARGETS rovio_node rovio_rosbag_loader feature_tracker_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+install(DIRECTORY cfg launch shaders
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
