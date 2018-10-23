@@ -7,11 +7,11 @@ using namespace rovio;
 
 class PatchTesting : public virtual ::testing::Test {
  protected:
-  static const int patchSize_ = 2;
-  static const int imgSize_ = patchSize_+4;
-  static const int nMax_ = 20;
-  static const int dx_ = 2;
-  static const int dy_ = 3;
+  static constexpr int patchSize_ = 2;
+  static constexpr int imgSize_ = patchSize_+4;
+  static constexpr int nMax_ = 20;
+  static constexpr int dx_ = 2;
+  static constexpr int dy_ = 3;
   cv::Mat img1_;
   cv::Mat img2_;
   Patch<patchSize_> p_;

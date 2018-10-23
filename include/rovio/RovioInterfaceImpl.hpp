@@ -119,6 +119,14 @@ public:
       const Eigen::Vector3d &JrJV, const QPD &qJV,
       const Eigen::Matrix<double, 6, 6> &measuredCov, const double time_s);
 
+  bool processLocalizationLandmarkUpdates(
+      const int camID, const Eigen::Matrix2Xd& keypoint_observations,
+      const Eigen::Matrix3Xd& G_landmarks, const double time_s);
+
+  void resetLocalizationMapBaseframeAndCovariance(
+      const V3D& WrWG, const QPD& qWG, double position_cov,
+      double rotation_cov);
+
   /** \brief Register multiple callbacks that are invoked once the filter
    *         concludes a successful update.
    */
@@ -172,10 +180,16 @@ private:
       mtPoseUpdate;
   mtPoseUpdate *mpPoseUpdate_;
 
+  typedef typename std::tuple_element<3, typename mtFilter::mtUpdates>::type
+      mtLocLandmarkUpdate;
+  mtLocLandmarkUpdate *mpLocLandmarkUpdate_;
+
   typedef typename mtImgUpdate::mtMeas mtImgMeas;
   mtImgMeas imgUpdateMeas_;
   typedef typename mtPoseUpdate::mtMeas mtPoseMeas;
   mtPoseMeas poseUpdateMeas_;
+  typedef typename mtLocLandmarkUpdate::mtMeas mtLocLandmarkMeas;
+  mtLocLandmarkMeas locLandmarkUpdateMeas_;
 
   typedef typename std::tuple_element<2, typename mtFilter::mtUpdates>::type
       mtVelocityUpdate;

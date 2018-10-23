@@ -46,7 +46,7 @@ class MultilevelPatch{
  public:
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-  static const int nLevels_ = nLevels;  /**<Number of pyramid levels on which the feature is defined.*/
+  static constexpr int nLevels_ = nLevels;  /**<Number of pyramid levels on which the feature is defined.*/
   Patch<patchSize> patches_[nLevels_];  /**<Array, holding the patches on each pyramid level.*/
   bool isValidPatch_[nLevels_];  /**<Array, specifying if there is a valid patch stored at the corresponding location in \ref patches_.*/
   mutable Eigen::Matrix3f H_;  /**<Hessian matrix, corresponding to the multilevel patches.*/
@@ -190,6 +190,9 @@ class MultilevelPatch{
    *                      If false, the check is only executed with the general patch dimensions.
    */
   static bool isMultilevelPatchInFrame(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
+    CHECK_NOTNULL(c.mpCamera_);
+    CHECK_GE(c.camID_, 0);
+
     if(!c.isInFront() || !c.com_warp_c()) return false;
     const auto coorTemp = pyr.levelTranformCoordinates(c,0,l);
     return Patch<patchSize>::isPatchInFrame(pyr.imgs_[l],coorTemp,withBorder);
@@ -204,6 +207,9 @@ class MultilevelPatch{
    * @param withBorder  - If true, both, the general patches and the corresponding expanded patches are extracted.
    */
   void extractMultilevelPatchFromImage(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
+    CHECK_NOTNULL(c.mpCamera_);
+    CHECK_GE(c.camID_, 0);
+
     for(unsigned int i=0;i<=l;i++){
       const auto coorTemp = pyr.levelTranformCoordinates(c,0,i);
       isValidPatch_[i] = true;

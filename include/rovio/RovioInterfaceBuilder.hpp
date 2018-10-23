@@ -54,8 +54,11 @@ namespace rovio {
 template<
   // kNumCameras: number of cameras.
   size_t kNumCameras,
-  // kLocalizationMode: 0-off, 1: estimate baseframe, 2: (1) + sensor offset
-  int kLocalizationMode,
+  // kEnableLocalizationMode: used for localization landmarks.
+  bool kEnableMapLocalization,
+  // kNPoses: 0-off, 1: estimate baseframe, 2: (1) + sensor offset.
+  // used for 6dof localizations.
+  int kNPoses,
   // Maximal number of considered features in the filter state.
   size_t kMaxNumFeatures,
   // Total number of pyramid levels considered.
@@ -68,7 +71,7 @@ template<
   CHECK_EQ(camera_calibrations.size(), kNumCameras);
   typedef rovio::RovioFilter<
       rovio::FilterState<kMaxNumFeatures, kPyramidLevels, kFeaturePatchSizePx,
-          kNumCameras, kLocalizationMode>> FilterType;
+          kNumCameras, kNPoses, kEnableMapLocalization>> FilterType;
   return new RovioInterfaceImpl<FilterType>(filter_config, camera_calibrations);
 }
 } // namespace rovio

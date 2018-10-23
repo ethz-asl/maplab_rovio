@@ -128,6 +128,7 @@ class VelocityUpdate: public LWF::Update<VelocityInnovation,FILTERSTATE,Velocity
   using Base::doubleRegister_;
   using Base::intRegister_;
   using Base::meas_;
+  using Base::disablePreAndPostProcessingWarning_;
   typedef typename Base::mtState mtState;
   typedef typename Base::mtFilterState mtFilterState;
   typedef typename Base::mtInnovation mtInnovation;
@@ -149,6 +150,7 @@ class VelocityUpdate: public LWF::Update<VelocityInnovation,FILTERSTATE,Velocity
     doubleRegister_.removeScalarByStr("kappa");
     doubleRegister_.removeScalarByStr("updateVecNormTermination");
     doubleRegister_.registerQuaternion("qAM",qAM_);
+    disablePreAndPostProcessingWarning_ = true;
   };
 
   /** \brief Destructor
@@ -163,8 +165,9 @@ class VelocityUpdate: public LWF::Update<VelocityInnovation,FILTERSTATE,Velocity
    *  @param noise        - Additive discrete Gaussian noise.
    *  @param dt           - Not used.
    */
-  void evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
+  bool evalInnovation(mtInnovation& y, const mtState& state, const mtNoise& noise) const{
     y.vel() = qAM_.rotate(state.MvM()) + meas_.vel() + noise.vel(); // Velocity of state has a minus sign
+    return true;
   }
 
   /** \brief Computes the Jacobian for the update step of the filter.

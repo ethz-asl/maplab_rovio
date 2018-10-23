@@ -10,13 +10,13 @@ using namespace rovio;
 
 class MLPTesting : public virtual ::testing::Test {
  protected:
-  static const int nLevels_ = 2;
-  static const int patchSize_ = 2;
-  static const int imgSize_ = (patchSize_+2)*pow(2,nLevels_-1)+4;
-  static const int nMax_ = 20;
-  static const int nCam_ = 2;
-  static const int dx_ = 2;
-  static const int dy_ = 3;
+  static constexpr int nLevels_ = 2;
+  static constexpr int patchSize_ = 2;
+  static constexpr int imgSize_ = (patchSize_+2)*pow(2,nLevels_-1)+4;
+  static constexpr int nMax_ = 20;
+  static constexpr int nCam_ = 2;
+  static constexpr int dx_ = 2;
+  static constexpr int dy_ = 3;
 
   ImagePyramid<nLevels_> pyr1_;
   ImagePyramid<nLevels_> pyr2_;
@@ -348,7 +348,7 @@ TEST_F(MLPTesting, levelTranformCoordinates) {
   ASSERT_EQ(pyr.centers_[3].y,0.0);
   for(int l1=0;l1<nLevels;l1++){
     for(int l2=0;l2<nLevels;l2++){
-      pyr.levelTranformCoordinates(c_,c2,l1,l2);
+      c2 = pyr.levelTranformCoordinates(c_,l1,l2);
       ASSERT_EQ(c2.get_c().x,pow(2.0,l1-l2));
       ASSERT_EQ(c2.get_c().y,pow(2.0,l1-l2));
     }
@@ -365,7 +365,7 @@ TEST_F(MLPTesting, levelTranformCoordinates) {
   ASSERT_EQ(pyr.centers_[3].y,-1.0);
   for(int l1=0;l1<nLevels;l1++){
     for(int l2=0;l2<nLevels;l2++){
-      pyr.levelTranformCoordinates(c_,c2,l1,l2);
+      c2 = pyr.levelTranformCoordinates(c_,l1,l2);
       ASSERT_EQ(c2.get_c().x,pow(2.0,l1-l2)+(pyr.centers_[l1].x-pyr.centers_[l2].x)*pow(0.5,l2));
       ASSERT_EQ(c2.get_c().y,pow(2.0,l1-l2)+(pyr.centers_[l1].y-pyr.centers_[l2].y)*pow(0.5,l2));
     }
