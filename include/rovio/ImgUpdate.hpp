@@ -506,7 +506,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     transformFeatureOutputCT_.transformState(state,featureOutput_);
 
     if(!hasConverged_){
-      if(verbose_) std::cout << "    \033[31mREJECTED (iterations did no converge)\033[0m" << std::endl;
+      VLOG(3) <<  "    \033[31mFeature " << ID << ": Rejected (iterations did no converge)\033[0m";
       if(mlpTemp1_.isMultilevelPatchInFrame(meas_.aux().pyr_[activeCamID],featureOutput_.c(),startLevel_,false)){
         featureOutput_.c().drawPoint(drawImg_, cv::Scalar(255,0,0),1.0);
       }
@@ -515,13 +515,13 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
 
     if(patchRejectionTh_ >= 0){
       if(!mlpTemp1_.isMultilevelPatchInFrame(meas_.aux().pyr_[activeCamID],featureOutput_.c(),startLevel_,false)){
-        if(verbose_) std::cout << "    \033[31mREJECTED (not in frame)\033[0m" << std::endl;
+        VLOG(3) << "    \033[31mFeature " << ID << ": Rejected (not in frame)\033[0m";
         return false;
       }
       mlpTemp1_.extractMultilevelPatchFromImage(meas_.aux().pyr_[activeCamID],featureOutput_.c(),startLevel_,false);
       const float avgError = mlpTemp1_.computeAverageDifference(*state.aux().mpCurrentFeature_->mpMultilevelPatch_,endLevel_,startLevel_);
       if(avgError > patchRejectionTh_){
-        if(verbose_) std::cout << "    \033[31mREJECTED (error too large: " << avgError << ")\033[0m" << std::endl;
+        VLOG(3) << "    \033[31mFeature " << ID << ": Rejected (patch RMSE too large: " << avgError << ")\033[0m";
         featureOutput_.c().drawPoint(drawImg_, cv::Scalar(255,255,0),1.0);
         return false;
       }
@@ -549,7 +549,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
           }
         }
         if(countAboveThreshold < 2){
-          if(verbose_) std::cout << "    \033[31mREJECTED (feature location not discriminative enough)\033[0m" << std::endl;
+          VLOG(3) << "    \033[31mFeature " << ID << ": Rejected (feature location not discriminative enough)\033[0m";
           return false;
         }
       }
@@ -834,7 +834,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
         for(unsigned int i=0;i<mtState::nMax_;i++){
           if(filterState.fsm_.isValid_[i]){
             if(filterState.state_.dep(i).getDistance() < 1e-8){
-              if(verbose_) std::cout << "    \033[33mRemoved feature " << filterState.fsm_.features_[i].idx_ << " with invalid distance parameter " << filterState.state_.dep(i).p_ << "!\033[0m" << std::endl;
+              VLOG(2) << "    \033[33mFeature " << i << ": Removed due to invalid distance parameter " << filterState.state_.dep(i).p_ << "!\033[0m";
               filterState.fsm_.isValid_[i] = false;
               filterState.resetFeatureCovariance(i,Eigen::Matrix3d::Identity());
             }
@@ -875,7 +875,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
               mlpTemp1_.drawMultilevelPatchBorder(drawImg_,featureOutput_.c(),1.0,cv::Scalar(0,0,150+(activeCamID == camID)*105));
               featureOutput_.c().drawText(drawImg_,"NIF",cv::Scalar(0,0,150+(activeCamID == camID)*105));
             }
-            if(verbose_) std::cout << "    \033[31mNot in frame after update!\033[0m" << std::endl;
+            VLOG(2) << "    \033[31mFeature "  << ID << ": Not in frame after update!\033[0m";
           }
         } else {
           f.mpStatistics_->status_[activeCamID] = FAILED_TRACKING;
@@ -884,19 +884,19 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
               mlpTemp1_.drawMultilevelPatchBorder(drawImg_,featureOutput_.c(),1.0,cv::Scalar(0,0,150+(activeCamID == camID)*105));
               featureOutput_.c().drawText(drawImg_,"MD: " + std::to_string(outlierDetection.getMahalDistance(0)),cv::Scalar(0,0,150+(activeCamID == camID)*105));
             }
-            if(verbose_) std::cout << "    \033[31mRecognized as outlier by filter: " << outlierDetection.getMahalDistance(0) << "\033[0m" << std::endl;
+            VLOG(2) << "    \033[31mFeature "  << ID << ": Recognized as outlier by filter, mahalanobis distance: " << outlierDetection.getMahalDistance(0) << "\033[0m" << std::endl;
           } else if(!hasConverged_){
             if(doFrameVisualisation_){
               mlpTemp1_.drawMultilevelPatchBorder(drawImg_,featureOutput_.c(),1.0,cv::Scalar(0,0,150+(activeCamID == camID)*105));
               featureOutput_.c().drawText(drawImg_,"INC",cv::Scalar(0,0,150+(activeCamID == camID)*105));
             }
-            if(verbose_) std::cout << "    \033[31mIterations not converged!\033[0m" << std::endl;
+            VLOG(2) << "    \033[31mFeature "  << ID << ": Iterations did not converge!\033[0m";
           } else {
             if(doFrameVisualisation_){
               mlpTemp1_.drawMultilevelPatchBorder(drawImg_,featureOutput_.c(),1.0,cv::Scalar(0,0,150+(activeCamID == camID)*105));
               featureOutput_.c().drawText(drawImg_,"PE",cv::Scalar(0,0,150+(activeCamID == camID)*105));
             }
-            if(verbose_) std::cout << "    \033[31mToo large pixel intesity error!\033[0m" << std::endl;
+            VLOG(2) << "    \033[31mFeature "  << ID << ": Too large pixel intesity error!\033[0m";
           }
         }
 

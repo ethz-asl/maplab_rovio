@@ -220,8 +220,10 @@ class LocalizationLandmarkUpdate :
     if (innovation != nullptr) {
       Eigen::Vector2d predicted_keypoint(
               predicted_keypoint_cv.x, predicted_keypoint_cv.y);
-      VLOG(2) << predicted_keypoint.transpose() << " - " << measurement_.keypoint().transpose() << ": " << (predicted_keypoint - measurement_.keypoint()).norm();
       innovation->pix() = (predicted_keypoint - measurement_.keypoint());
+      VLOG(3) << "Localization: predicted (" << predicted_keypoint.transpose()
+              << ") - measured key point (" << measurement_.keypoint().transpose()
+              << ") - error: " << innovation->pix();
     }
 
     if (jacobian != nullptr) {
