@@ -49,7 +49,7 @@ void CameraCalibration::loadFromFile(const std::string& calibration_yaml_file) {
   if (distortionModelName == "plumb_bob") {
     loadRadTanDistortion(calibration_yaml_file);
   } else if (distortionModelName == "equidistant") {
-    loadRadTanDistortion(calibration_yaml_file);
+    loadEquidistDistortion(calibration_yaml_file);
   } else {
     std::cout << "ERROR: no camera Model detected!" << std::endl;
     return;
