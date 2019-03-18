@@ -39,6 +39,7 @@
 #include "rovio/CoordinateTransform/PixelOutput.hpp"
 #include "rovio/ZeroVelocityUpdate.hpp"
 #include "rovio/MultilevelPatchAlignment.hpp"
+#include "rovio/ImageMask.hpp"
 
 namespace rovio {
 
@@ -178,6 +179,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
   using Base::doubleRegister_;
   using Base::intRegister_;
   using Base::boolRegister_;
+  using Base::stringRegister_;
   using Base::updnoiP_;
   using Base::useImprovedJacobian_;
   using Base::hasConverged_;
@@ -193,6 +195,9 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
 
   // Multicamera pointer
   MultiCamera<mtState::nCam_>* mpMultiCamera_;
+
+  // Optional image mask for removing features in masked parts of an image.
+  ImageMask mask_;
 
   // Parameter
   M3D initCovFeature_;
@@ -240,6 +245,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
   double discriminativeSamplingDistance_; /**<Sampling distance for checking discriminativity of patch (if <= 0.0 no check is performed).*/
   double discriminativeSamplingGain_; /**<Gain for threshold above which the samples must lie (if <= 1.0 the patchRejectionTh is used).*/
 
+  std::string imageMaskPath_;
+  bool apply_image_mask_; /**< Whether to apply an image mask loaded from a path. */
 
   // Temporary
   mutable PixelOutputCT pixelOutputCT_;
@@ -319,6 +326,8 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     alignmentGaussianWeightingSigma_ = 2.0;
     discriminativeSamplingDistance_ = 0.0;
     discriminativeSamplingGain_ = 0.0;
+    imageMaskPath_ = "";
+    apply_image_mask_ = false;
     doubleRegister_.registerDiagonalMatrix("initCovFeature",initCovFeature_);
     doubleRegister_.registerScalar("initDepth",initDepth_);
     doubleRegister_.registerScalar("startDetectionTh",startDetectionTh_);
@@ -374,6 +383,11 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     doubleRegister_.registerScalar("alignmentGaussianWeightingSigma",alignmentGaussianWeightingSigma_);
     alignmentGradientExponent_ = static_cast<double>(alignment_.gradientExponent_);
     doubleRegister_.registerScalar("alignmentGradientExponent",alignmentGradientExponent_);
+
+    stringRegister_.registerScalar("imageMask", imageMaskPath_);
+    if (!imageMaskPath_.empty() && mask_.loadImage(imageMaskPath_)) {
+      apply_image_mask_ = true;
+    }
   };
 
   /** \brief Destructor
@@ -394,6 +408,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     alignment_.huberNormThreshold_ = static_cast<float>(alignmentHuberNormThreshold_);
     alignment_.computeWeightings(alignmentGaussianWeightingSigma_);
     alignment_.gradientExponent_ = static_cast<float>(alignmentGradientExponent_);
+
+    if (!imageMaskPath_.empty() && mask_.loadImage(imageMaskPath_)) {
+      apply_image_mask_ = true;
+    }
   };
 
   /** \brief Sets the multicamera pointer
@@ -1036,6 +1054,10 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
           meas.aux().pyr_[camID].detectFastCorners(candidates_,l,fastDetectionThreshold_);
         }
 
+        if (apply_image_mask_) {
+          mask_.pruneFeatureVector(&candidates_);
+        }
+
         for (FeatureCoordinates& candidate : candidates_) {
           CHECK_GE(camID, 0);
           candidate.camID_ = camID;
@@ -1182,7 +1204,7 @@ ImgOutlierDetection<typename FILTERSTATE::mtState>,false>{
     cv::ellipse(filterState.img_[camID],rollCenter,cv::Size(10,10),0,0,180,rollColor1,2,8,0);
     cv::circle(filterState.img_[camID],rollCenter,2,rollColor1,-1,8,0);
   }
-};
+  };
 
 }
 

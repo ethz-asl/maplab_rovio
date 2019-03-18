@@ -142,6 +142,8 @@ struct FilterConfiguration : public boost::property_tree::ptree {
       AccBiasCovarianceY, Prediction.PredictionNoise.acb_1, double);
   GETTER_AND_SETTER(
       AccBiasCovarianceZ, Prediction.PredictionNoise.acb_2, double);
+
+  GETTER_AND_SETTER(ImageMask, ImgUpdate.imageMask, std::string);
 };
 
 } // namespace rovio

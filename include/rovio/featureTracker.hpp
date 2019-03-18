@@ -37,6 +37,7 @@
 #include "rovio/MultiCamera.hpp"
 #include "rovio/FeatureManager.hpp"
 #include "rovio/MultilevelPatchAlignment.hpp"
+#include "rovio/ImageMask.hpp"
 
 namespace rovio{
 
@@ -70,6 +71,9 @@ class FeatureTrackerNode{
   static constexpr int detectionThreshold = 10; /**<See rovio::detectFastCorners().*/
   static constexpr bool drawNotFound_ = false;  /**<Draw MultilevelPatchFeature%s which were not found again.*/
   rovio::MultiCamera<nCam_> multiCamera_;
+
+  // Optional image mask for removing features in masked parts of an image.
+  ImageMask mask_;
 
   /** \brief Constructor
    */
@@ -236,6 +240,13 @@ class FeatureTrackerNode{
       const double t1 = (double) cv::getTickCount();
       for(int l=l1;l<=l2;l++){
         pyr_.detectFastCorners(candidates,l,detectionThreshold);
+      }
+      const bool apply_image_mask = true;
+      if (apply_image_mask) {
+        LOG(INFO) << "Pruning features with mask.";
+        mask_.pruneFeatureVector(&candidates);
+      } else {
+        LOG(INFO) << "NOT pruning features with mask.";
       }
       const double t2 = (double) cv::getTickCount();
       ROS_INFO_STREAM(" == Detected " << candidates.size() << " on levels " << l1 << "-" << l2 << " (" << (t2-t1)/cv::getTickFrequency()*1000 << " ms)");
