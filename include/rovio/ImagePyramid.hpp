@@ -29,9 +29,11 @@
 #ifndef IMAGEPYRAMID_HPP_
 #define IMAGEPYRAMID_HPP_
 
+#include <opencv2/core/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+
 #include "rovio/FeatureCoordinates.hpp"
 
 namespace rovio{
@@ -59,6 +61,45 @@ inline void halfSample(const cv::Mat& imgIn,cv::Mat& imgOut){
   }
 }
 
+template <int n_levels> class ImagePyramidMask {
+public:
+  ImagePyramidMask(){};
+  virtual ~ImagePyramidMask(){};
+  cv::Mat masks_[n_levels]; /**<Array, containing the pyramid masks.*/
+
+  // Computes image masks for the whole image pyramid.
+  // Check fails if mask is an empty cv::Mat
+  void computeFromMask(const cv::Mat &mask, const bool useCv = false) {
+    CHECK(!mask.empty()) << "Image mask is invalid!";
+    mask.copyTo(masks_[0]);
+    for (int i = 1; i < n_levels; ++i) {
+      if (!useCv) {
+        halfSample(masks_[i - 1], masks_[i]);
+      } else {
+        cv::pyrDown(masks_[i - 1], masks_[i],
+                    cv::Size(masks_[i - 1].cols / 2, masks_[i - 1].rows / 2));
+      }
+    }
+  }
+
+  // Load image mask from file, returns false if mask is empty/loading failed.
+  // Check fails if path is empty.
+  bool computeFromMask(const std::string &image_path) {
+    CHECK(!image_path.empty()) << "Path to mask image is empty!";
+
+    cv::Mat mask = cv::imread(image_path, CV_LOAD_IMAGE_GRAYSCALE);
+    if (!mask.empty()) {
+      LOG(INFO) << "Successfully loaded image mask from path: " << image_path;
+      computeFromMask(mask);
+      return true;
+    } else {
+
+      LOG(ERROR) << "Couldn't load image mask from path: " << image_path;
+      return false;
+    }
+  }
+};
+
 /** \brief Image pyramid with selectable number of levels.
  *
  *   @tparam n_levels - Number of pyramid levels.
@@ -80,6 +121,7 @@ class ImagePyramid{
    */
   void computeFromImage(const cv::Mat& img, const bool useCv = false){
     img.copyTo(imgs_[0]);
+
     centers_[0] = cv::Point2f(0,0);
     for(int i=1; i<n_levels; ++i){
       if(!useCv){
@@ -131,21 +173,42 @@ class ImagePyramid{
 
   /** \brief Extract FastCorner coordinates
    *
-   * @param candidates         - List of the extracted corner coordinates (defined on pyramid level 0).
-   * @param l                  - Pyramid level at which the corners should be extracted.
-   * @param detectionThreshold - Detection threshold of the used cv::FastFeatureDetector.
-   *                             See http://docs.opencv.org/trunk/df/d74/classcv_1_1FastFeatureDetector.html
+   * @param candidates         - List of the extracted corner coordinates
+   * (defined on pyramid level 0).
+   * @param masks              - Pointer to first element of a fixed size array
+   * containing image masks to be applied to the corner detection.
+   * @param l                  - Pyramid level at which the corners should be
+   * extracted.
+   * @param detectionThreshold - Detection threshold of the used
+   * cv::FastFeatureDetector. See
+   * http://docs.opencv.org/trunk/df/d74/classcv_1_1FastFeatureDetector.html
    */
-  void detectFastCorners(FeatureCoordinatesVec & candidates, int l, int detectionThreshold) const{
+  void detectFastCorners(FeatureCoordinatesVec &candidates,
+                         const cv::Mat *masks, const int l,
+                         const int detectionThreshold) const {
+    CHECK_NOTNULL(masks);
     std::vector<cv::KeyPoint> keypoints;
 #if (CV_MAJOR_VERSION < 3)
     cv::FastFeatureDetector feature_detector_fast(detectionThreshold, true);
-    feature_detector_fast.detect(imgs_[l], keypoints);
+    if (!masks[l].empty()) {
+      CHECK_EQ(masks[l].cols, imgs_[l].cols);
+      CHECK_EQ(masks[l].rows, imgs_[l].rows);
+      feature_detector_fast.detect(imgs_[l], keypoints, masks[l]);
+    } else {
+      feature_detector_fast.detect(imgs_[l], keypoints);
+    }
 #else
-    auto feature_detector_fast = cv::FastFeatureDetector::create(detectionThreshold, true);
-    feature_detector_fast->detect(imgs_[l], keypoints);
+    auto feature_detector_fast =
+        cv::FastFeatureDetector::create(detectionThreshold, true);
+    if (!masks[l].empty()) {
+      CHECK_EQ(masks[l].cols, imgs_[l].cols);
+      CHECK_EQ(masks[l].rows, imgs_[l].rows);
+      feature_detector_fast->detect(imgs_[l], keypoints, masks[l]);
+    } else {
+      feature_detector_fast->detect(imgs_[l], keypoints);
+    }
 #endif
-    candidates.reserve(candidates.size()+keypoints.size());
+    candidates.reserve(candidates.size() + keypoints.size());
     for (auto it = keypoints.cbegin(), end = keypoints.cend(); it != end; ++it) {
       candidates.push_back(
               levelTranformCoordinates(FeatureCoordinates(cv::Point2f(it->pt.x, it->pt.y)),l,0));

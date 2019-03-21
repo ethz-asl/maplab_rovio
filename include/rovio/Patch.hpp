@@ -199,7 +199,9 @@ class Patch {
    *                       of the expanded patch Patch::patchWithBorder_ (withBorder = true).
    *   @return true, if the patch is completely located within the reference image.
    */
-  static bool isPatchInFrame(const cv::Mat& img,const FeatureCoordinates& c,const bool withBorder = false){
+  static bool isPatchInFrame(const cv::Mat &img, const FeatureCoordinates &c,
+                             const bool withBorder = false,
+                             const cv::Mat *mask = nullptr) {
     if(c.isInFront() && c.com_warp_c()){
       const int halfpatch_size = patchSize/2+(int)withBorder;
       if(c.isNearIdentityWarping()){
@@ -207,6 +209,25 @@ class Patch {
           return false;
         } else {
           return true;
+        }
+
+        if (mask != nullptr) {
+          // Check all corners. Since warping is almost identity we approximate
+          // it.
+          cv::Point2f offset;
+          const cv::Point2f &center = c.get_c();
+          cv::Point2f corner;
+          for (offset.y = -halfpatch_size; offset.y < halfpatch_size;
+               offset.y += 2 * halfpatch_size - 1) {
+            corner.y = center.y + offset.y;
+            for (offset.x = -halfpatch_size; offset.x < halfpatch_size;
+                 offset.x += 2 * halfpatch_size - 1) {
+              corner.x = center.x + offset.x;
+              if (mask->at<uint8_t>(corner) == 0u) {
+                return false;
+              }
+            }
+          }
         }
       } else {
         for(int y=0; y<2*halfpatch_size; y += 2*halfpatch_size-1){
@@ -221,6 +242,11 @@ class Patch {
             const int v_r = floor(c_y);
             if(u_r < 0 || v_r < 0 || u_r >= img.cols-1 || v_r >= img.rows-1){
               return false;
+            }
+            if (mask != nullptr) {
+              if (mask->at<uint8_t>(v_r, u_r) == 0u) {
+                return false;
+              }
             }
           }
         }
