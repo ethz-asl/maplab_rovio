@@ -77,7 +77,8 @@ public:
         halfSample(masks_[i - 1], masks_[i]);
       } else {
         cv::pyrDown(masks_[i - 1], masks_[i],
-                    cv::Size(masks_[i - 1].cols / 2, masks_[i - 1].rows / 2));
+                    cv::Size(masks_[i - 1].cols / 2, masks_[i - 1].rows / 2),
+                    cv::INTER_NEAREST);
       }
     }
   }
