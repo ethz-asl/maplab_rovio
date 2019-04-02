@@ -189,13 +189,23 @@ class MultilevelPatch{
    * @param withBorder  - If true, the check is executed with the expanded patch dimensions (incorporates the general patch dimensions).
    *                      If false, the check is only executed with the general patch dimensions.
    */
-  static bool isMultilevelPatchInFrame(const ImagePyramid<nLevels>& pyr,const FeatureCoordinates& c, const int l = nLevels-1,const bool withBorder = false){
+  static bool isMultilevelPatchInFrame(const ImagePyramid<nLevels> &pyr,
+                                       const FeatureCoordinates &c,
+                                       const int l = nLevels - 1,
+                                       const bool withBorder = false,
+                                       const cv::Mat *masks = nullptr) {
     CHECK_NOTNULL(c.mpCamera_);
     CHECK_GE(c.camID_, 0);
 
     if(!c.isInFront() || !c.com_warp_c()) return false;
     const auto coorTemp = pyr.levelTranformCoordinates(c,0,l);
-    return Patch<patchSize>::isPatchInFrame(pyr.imgs_[l],coorTemp,withBorder);
+    if (masks != nullptr && !masks[l].empty()) {
+      return Patch<patchSize>::isPatchInFrame(pyr.imgs_[l], coorTemp,
+                                              withBorder, &(masks[l]));
+    } else {
+      return Patch<patchSize>::isPatchInFrame(pyr.imgs_[l], coorTemp,
+                                              withBorder);
+    }
   }
 
   /** \brief Extracts a multilevel patch from a given image pyramid.
