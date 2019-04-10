@@ -161,4 +161,14 @@ if(CATKIN_ENABLE_TESTING)
   target_link_libraries(test_llu gtest_main gtest pthread ${PROJECT_NAME} ${catkin_LIBRARIES} ${YamlCpp_LIBRARIES} ${glog_catkin_LIBRARIES})
   add_test(test_llu test_llu)
 endif()
-               
+
+# Setting for make install
+install(DIRECTORY include/${PROJECT_NAME}/
+  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+install(TARGETS ${PROJECT_NAME}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+install(TARGETS rovio_node rovio_rosbag_loader feature_tracker_node
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION})
+install(DIRECTORY cfg launch shaders
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
