@@ -50,7 +50,8 @@ namespace rovio{
 
   const cv::Point2f& FeatureCoordinates::get_c() const{
     if(!com_c()){
-      std::cout << "    \033[31mERROR: No valid coordinate data!\033[0m" << std::endl;
+      std::cout << "    \033[31mERROR: No valid coordinate data [1]!\033[0m"
+                << std::endl;
     }
     return c_;
   }
@@ -67,7 +68,8 @@ namespace rovio{
 
   const LWF::NormalVectorElement& FeatureCoordinates::get_nor() const{
     if(!com_nor()){
-      std::cout << "    \033[31mERROR: No valid coordinate data!\033[0m" << std::endl;
+      std::cout << "    \033[31mERROR: No valid coordinate data [2]!\033[0m"
+                << std::endl;
     }
     return nor_;
   }
@@ -76,7 +78,8 @@ namespace rovio{
     CHECK_NOTNULL(mpCamera_);
     if(!mpCamera_->bearingToPixel(get_nor(),c_,matrix2dTemp_)){
       matrix2dTemp_.setZero();
-      std::cout << "    \033[31mERROR: No valid coordinate data!\033[0m" << std::endl;
+      std::cout << "    \033[31mERROR: No valid coordinate data [3]!\033[0m"
+                << std::endl;
     }
     return matrix2dTemp_;
   }
