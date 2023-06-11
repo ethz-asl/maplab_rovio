@@ -88,7 +88,7 @@ public:
   bool computeFromMask(const std::string &image_path) {
     CHECK(!image_path.empty()) << "Path to mask image is empty!";
 
-    cv::Mat mask = cv::imread(image_path, CV_LOAD_IMAGE_GRAYSCALE);
+    cv::Mat mask = cv::imread(image_path, cv::IMREAD_GRAYSCALE);
     if (!mask.empty()) {
       LOG(INFO) << "Successfully loaded image mask from path: " << image_path;
       computeFromMask(mask);

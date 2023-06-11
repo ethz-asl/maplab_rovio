@@ -137,7 +137,7 @@ class FeatureTrackerNode{
     pyr_.computeFromImage(img_, true);
 
     // Drawing
-    cvtColor(img_, draw_image_, CV_GRAY2RGB);
+    cvtColor(img_, draw_image_, cv::COLOR_GRAY2RGB);
     const int numPatchesPlot = 10;
     draw_patches_ = cv::Mat::zeros(numPatchesPlot*(patchSize_*pow(2,nLevels_-1)+4),3*(patchSize_*pow(2,nLevels_-1)+4),CV_8UC1);
 
